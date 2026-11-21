@@ -1,0 +1,58 @@
+{
+  "name": "dsh-book-select",
+  "version": "0.1.3",
+  "type": "module",
+  "description": "Book selection workbench for an academic library: hard-rule prefilter plus LLM screening, with a Q&A panel about the selection design.",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "harness",
+    "plugin",
+    "library",
+    "book-selection",
+    "acquisition",
+    "llm"
+  ],
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./icon": "./icon.svg",
+    "./locale/*.json": "./locale/*.json",
+    "./lib/*": "./lib/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib/rules.js",
+    "lib/parse.js",
+    "lib/screening.js",
+    "lib/scheduler.js",
+    "cordis.patch.yml",
+    "locale/en.json",
+    "locale/zh.json",
+    "icon.svg",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.2.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    },
+    "manifestVersion": 1
+  }
+}

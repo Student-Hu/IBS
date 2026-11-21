@@ -1,0 +1,1742 @@
+{
+  "name": "图书馆图书采购筛选工作流",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "54c77197-d2e0-4bbc-97b4-cf8a19a904fd",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -736,
+        720
+      ],
+      "retryOnFail": true,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bcd3dd04-0082-4da6-b36b-e5ad09c4de30",
+              "name": "spreadsheet_location",
+              "type": "string",
+              "value": "D:\\CodeProject\\Agent\\library_n8n\\原始数据\\征订记录BWZ2613-S-导出明细.xlsx"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "86d66db9-640d-4c59-b0b8-13480ea0b059",
+      "name": "Set Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $input.first().json.spreadsheet_location }}",
+        "options": {}
+      },
+      "id": "e07c7cea-76cb-4dd9-89d2-efa8ced988b5",
+      "name": "Read/Write Files from Disk1",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1296,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "id": "98831641-0055-4d6a-9507-bd4266fd9fc7",
+      "name": "Extract from File1",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1520,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "JWtI9fYqcVB3NIsd",
+          "mode": "list",
+          "cachedResultName": "征订书籍",
+          "cachedResultUrl": "/projects/FnIbIrZ3F0JcVwD4/datatables/JWtI9fYqcVB3NIsd"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "serial_no": "={{ $json[\"序号\"] }}",
+            "price": "={{ $json[\"价格\"] }}",
+            "title": "={{ $json[\"题名\"] }}",
+            "publisher": "={{ $json[\"出版社\"] }}",
+            "classification_no": "={{ $json[\"分类号\"] }}",
+            "publication_year": "={{ $json[\"出版年\"] }}",
+            "author": "={{ $json[\"责任者\"] }}",
+            "isbn": "={{ $json[\"ISBN\"] }}",
+            "series_title": "={{ $json[\"丛书题名\"] }}",
+            "physical_description": "={{ $json[\"载体\"] }}",
+            "secondary_author": "={{ $json[\"第二责任者\"] }}",
+            "document_type": "={{ $json[\"文献类型\"] }}",
+            "ordered_sets": "={{ $json[\"预订套数\"] }}",
+            "target_audience": "={{ $json[\"读者对象\"] }}",
+            "subject": "={{ $json[\"主题\"] }}",
+            "summary": "={{ $json[\"内容简介\"] }}",
+            "language": "={{ $json[\"作品语种\"] }}",
+            "part_title": "={{ $json[\"分册名\"] }}",
+            "dimensions": "={{ $json[\"尺寸\"] }}",
+            "pagination": "={{ $json[\"页码\"] }}",
+            "edition_description": "={{ $json[\"版本说明\"] }}",
+            "order_no": "={{ $json[\"订购号\"] }}",
+            "edition": "={{ $json[\"版次\"] }}",
+            "volumes_per_set": "={{ $json[\"册/套\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "serial_no",
+              "displayName": "serial_no",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "publisher",
+              "displayName": "publisher",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "classification_no",
+              "displayName": "classification_no",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "publication_year",
+              "displayName": "publication_year",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "author",
+              "displayName": "author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "isbn",
+              "displayName": "isbn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "series_title",
+              "displayName": "series_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "physical_description",
+              "displayName": "physical_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "secondary_author",
+              "displayName": "secondary_author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "document_type",
+              "displayName": "document_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ordered_sets",
+              "displayName": "ordered_sets",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "target_audience",
+              "displayName": "target_audience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "language",
+              "displayName": "language",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "part_title",
+              "displayName": "part_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "dimensions",
+              "displayName": "dimensions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "pagination",
+              "displayName": "pagination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "edition_description",
+              "displayName": "edition_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "order_no",
+              "displayName": "order_no",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "edition",
+              "displayName": "edition",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "volumes_per_set",
+              "displayName": "volumes_per_set",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "7aecbbd0-c7df-4840-b8df-b48ea6ee508b",
+      "name": "Insert row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1744,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JWtI9fYqcVB3NIsd",
+          "mode": "list",
+          "cachedResultName": "征订书籍",
+          "cachedResultUrl": "/projects/FnIbIrZ3F0JcVwD4/datatables/JWtI9fYqcVB3NIsd"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "isEmpty"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "d0ff2e80-908d-4683-82a5-c0aee5041697",
+      "name": "Get row(s)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -528,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (items.length === 0) { return []; }\nconst getField = (obj, ...keys) => {\n  for (const k of keys) {\n    if (obj[k] !== undefined && obj[k] !== null) { return obj[k]; }\n  }\n  return \"\";\n};\nconst outputItems = [];\nfor (let i = 0; i < items.length; i++) {\n  const row = items[i].json;\n  outputItems.push({\n    json: {\n      序号: getField(row, \"serial_no\"),\n      书名: getField(row, \"title\"),\n      价格: parseFloat(getField(row, \"price\")) || 0,\n      出版社: getField(row, \"publisher\"),\n      ISBN: getField(row, \"isbn\"),\n      责任者: getField(row, \"author\"),\n      出版年: parseInt(getField(row, \"publication_year\")) || 0,\n      分类号: getField(row, \"分类号\", \"classification_no\"),\n      内容简介: getField(row, \"summary\"),\n      版次: getField(row, \"edition\") || \"\",\n      页码: getField(row, \"pagination\")\n    }\n  });\n}\nconsole.log(\"Code: Output \" + outputItems.length + \" books\");\nreturn outputItems;"
+      },
+      "id": "3a45cafa-4487-4a16-a6aa-7e1dad6e9393",
+      "name": "Code in JavaScript1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n const prefilteredRejected = [];\n\nfunction isPagesGreaterThan20(pageStr) {\n    if (!pageStr || typeof pageStr !== 'string') return true;\n    const trimmed = pageStr.trim();\n    if (!trimmed.endsWith('页')) return true;\n    const numPart = trimmed.slice(0, -1);\n    const numWithComma = numPart.replace(/[^0-9,]/g, '');\n    if (numWithComma.length === 0) return true;\n    const numericStr = numWithComma.replace(/,/g, '');\n    const pages = parseInt(numericStr, 10);\n    return !isNaN(pages) && pages > 20;\n}\n\nconst iClassWhitelist = [\n  '人民文学出版社', '作家出版社', '作家出版社有限公司',\n  '广西师范大学出版社', '百花文艺出版社', '新星出版社',\n  '青岛出版社、新世界出版社',\n  '北京联合出版公司', '江苏凤凰文艺出版社', '长江出版社',\n  '中译出版社', '商务印书馆', '译林出版社', '中华书局', '北京大学出版社'\n];\n\nconst bannedKeywords = [\n  '心灵鸡汤', '励志成功', '情商课', '说话之道', '速成指南', '七天学会', '零基础速成',\n  '一本书读懂', '看穿', '看透', '从0到1', '年入百万', '财富密码', '赚钱秘籍',\n  '育儿经', '孕产妇', '胎教', '水产养殖', '养殖技术', '汽修', '美容美发',\n  '认知升级', '思维模型', '商业思维', '变现', '流量', '自媒体',\n  '一本通', '大全集', '合集', '精华', '干货', '秘籍', '宝典',\n  '考研', '考公', '公务员', '事业单位', '教师资格证', '注册会计师',\n  '风水', '算命', '星座', '塔罗', '占卜', '玄学', '日本', '佛', '词典',\n  'Vol', '作品集', '艺术集', '考古', '易学', '道学','丧葬'\n];\n\nconst needsAIFilter = [];\n\nfor (const item of items) {\n  const book = item.json;\n  const bookName = book.书名 || '';\n  const description = book.内容简介 || '';\n  const publisher = book.出版社 || '';\n  const classification = book.分类号 || '';\n  const edition = book.版次 || '';\n  const price = parseFloat(book.价格) || 0;\n  const pagination = (book.页码);\n\n  let rejected = false;\n  let rejectReason = '';\n\n  if (!isPagesGreaterThan20(pagination)){\n    rejected = true;\n    rejectReason = '图书页码小于20';\n  }\n  else if (price > 500) {\n    rejected = true;\n    rejectReason = '规则二-1：图书定价>500元';\n  }\n  else if (edition.includes('影印')) {\n    rejected = true;\n    rejectReason = '规则二-3：版次为影印版/影印本';\n  }\n  else if (classification.startsWith('I') && !iClassWhitelist.includes(publisher)) {\n    rejected = true;\n    rejectReason = '规则二-2：I类分类号且出版社不在白名单';\n  }\n  else {\n    const textToCheck = bookName + description;\n    for (const keyword of bannedKeywords) {\n      if (textToCheck.includes(keyword)) {\n        rejected = true;\n        rejectReason = '规则四：关键词\"' + keyword + '\"命中';\n        break;\n      }\n    }\n  }\n\n  if (rejected) {\n    prefilteredRejected.push({\n      序号: book.序号,\n      书名: bookName,\n      价格: price,\n      出版社: publisher,\n      排除原因: rejectReason\n    });\n    console.log('预过滤排除: ' + bookName + ' - ' + rejectReason);\n  } else {\n    needsAIFilter.push(item);\n  }\n}\n\nconsole.log('预过滤结果: 排除=' + prefilteredRejected.length + ', 待AI判断=' + needsAIFilter.length);\n\nreturn {json: {\"prefilteredRejected\": prefilteredRejected, \"needsAIFilter\": needsAIFilter}};"
+      },
+      "id": "45a4e705-dbbc-40a0-95e2-f64276a82e28",
+      "name": "预过滤",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.needsAIFilter"
+      },
+      "id": "642e98b3-366d-40a6-be5e-753a5e59881b",
+      "name": "needsAIFilter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 50,
+        "options": {}
+      },
+      "id": "f001598d-f0ac-40c8-bb55-7287abaf26ce",
+      "name": "分批处理",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        496,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData(\"global\");\nconst batchIndex = $(\"分批处理\").context.currentRunIndex;\nconst items = $input.all();\n\nif (items.length === 0 || batchIndex === undefined) {\n    return [{json: {\"error\": \"itemsLength: \"+ items.length + \" batchIndex: \" + batchIndex}}];\n}\n\nconst booksJson = items.map(item => item.json);\nreturn [{ json: { books: booksJson} }];"
+      },
+      "id": "4db59c89-6857-4353-adb7-0d0ff220b2cb",
+      "name": "断点检查",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=按照规则处理下面书籍的选择：\n{{ JSON.stringify($json.books) }}\n\n高校图书馆中文图书采购筛选规则\n一、核心定位与总原则\n\n你是高校图书馆中文图书采购专职筛选员，唯一目标是筛选出适合大学生学习与参考的好图书。\n\n• 执行宽进严出：疑似有学术价值但边界模糊的图书，一律先保留，不轻易排除；\n• 分类号作辅助线索，以实际内容价值为准\n• 所有判断必须严格依据本规则，不得加入任何个人主观偏好，不要自己发挥\n\n二、固定执行流程 **重要**\n\n1. 执行分类号内容判断规则\n2. 执行内容排除规则\n3. 结合出版社优先级给出最终结论\n4. 对无法明确判定的图书，列入待复审列表\n\n三、按分类号的内容判断规则\n\nA类：有关马克思主义著作，仅保留人民出版社、商务印书馆、中华书局、北京大学出版社、中国人民大学出版社出版的A类学术著作。\nB类：排除心灵鸡汤类、宗教类图书、论语、庄子、孟子、道德经，仅保留商务印书馆、人民出版社、科学出版社。\nD类：排除党建相关材料、官方政策读本。保留政治哲学、政治思想史、国际关系理论、法学理论等学术著作\nG类：排除法语、德语、波斯语、劳动教育、大学生心理健康、高校学生工作、教学研究、创新创业、其他高校的内容、太极拳、八段锦等主题图书、排除G250-279的图书、排除体育教学类、排除信息管理类; 保留科学出版社、中华书局、商务印书馆等出版社的图书。\nI类：排除诗集、网络文学、同人文、爽文。\nJ类：排除音乐类图书、排除摄影主题图书、排除书法类(仅保留商务印书馆、科学出版社、中华书局出版社)。\nK类：排除具体到城市/区县/乡镇等极小区域的地方史、地理志、乡土资料。\nF类：删除直播、直播运营、市场营销、跨境电商、会计、审计、财务、税务、股市等主题相关图书。\nH类：删除法语、德语、西班牙语、俄语等外语图书; 只保留中文、英语、日语三种语言类图书, 但是排除地方语言类图书；删除词典、手册。\n\n四、内容排除规则（大模型语义精准判断·满足任意一条即排除）\n\n1. 连续出版物 - 期刊、杂志、年鉴、辑刊、以\"第X辑/第X期/年度报告\"形式连续出版的文集、资料汇编。\n2. xxx学史类研究 - 例如：民俗学史研究。\n3. 纯军事/警政实务 - 以军事作战、武器装备、警察业务、安防技战术、军警实操为核心内容的图书。\n4. 中小学阶段教材教辅 - 面向幼儿、小学、初中、高中的课本、练习册、习题集、同步辅导、考试复习、中考高考类用书。\n5. 图情档专业实务手册 - 图书馆、档案馆、博物馆的内部工作规范、业务流程、操作指南、管理手册。\n6. 专业临床医学内容 - 临床诊疗、手术操作、专科医学理论、医学检验、专业医技类图书；保留：大众健康科普、基础生理知识、常见病预防类图书。\n7. 高度专业金融实务 - 农村金融、保险精算、养老保险运营、信贷实操、金融工程应用等高度应用化内容。\n8. 单一高校校史/校情研究 - 仅针对某一所大学的校史、校园文化、校情总结，无高等教育通用学术价值。\n9. 小众地方文化研究 - 仅聚焦区县/乡镇/村落等极小地域、冷门乡土、小众民俗，缺乏通识价值与普遍学术意义。\n10. 论文集 - 排除所有论文集。\n11. 过专过窄的\"XXX研究\" - 书名以\"研究\"结尾，但主题过于冷僻、狭窄、非主流；不排除：经典作家、重要思想家、重大历史事件、核心哲学/文学/史学命题研究。\n12. 日本通俗流行读物 - 以日本旅游、动漫、偶像、流行文化、生活技巧、美食、时尚为主，无学术与通识价值。\n15. 自媒体 - 自媒体作者拼凑的\"知识合集\"\"干货大全\"\"一本通\"\"精华集\"类图书。\n16. 成功学变种口水书 - \"认知升级\"\"思维模型\"\"底层逻辑\"\"商业思维\"\"变现\"\"流量\"类无实质学术内容的图书。\n17. 纯图片集 - 无实质性文字内容、仅为图片堆砌的\"图鉴\"\"画册\"\"摄影集\"。\n18. 商业传记类 - 企业传记、企业家自传、商业成功案例（非学术研究类）。\n19. 职业考试辅导书 - 考研、考公、司法、事业单位、教师资格证、注册会计师等各类职业资格考试辅导用书。\n20. 玄学迷信类 - 风水、算命、星座、塔罗、占卜、玄学类图书。\n21. 纯习题集 - 纯习题集、试题库、试卷汇编（非教材配套的教学用书）。\n22. 行业报告类 - 各类行业报告、白皮书、年度报告（非学术研究类）。\n23. 宗教佛学类,道学易学类\n24. 2024年及以前的书籍只保留科学出版社、中信出版集团、中华书局等出版社的图书或者林业类图书\n25. 所有年鉴、地方志\n26. 大学生职业生涯规划、就业知道、就业创业类图书\n\n\n五、输出要求\n输出格式（必须严格遵守，不得修改）：\n{\"passed\": [], \"rejected\": [], \"review\": []}\n\n• passed数组每项：{ \"序号\":\"XXX\",\"题名\":\"XXX\",\"通过理由\":\"\" }\n• rejected数组每项：{ \"序号\":\"XXX\", \"题名\":\"XXX\", \"排除原因\":\"规则第X条 + 具体依据\" }\n• review数组每项：{ \"序号\":\"XXX\", \"题名\":\"XXX\", \"待复审原因\":\"[信息不足/边界模糊/疑似优质边缘图书]\" }",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "id": "8ab6ff21-e9bc-4253-ab56-8ceba95cdb07",
+      "name": "Message a model",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        912,
+        752
+      ],
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\"passed\": [{\"序号\": \"1\", \"题名\": \"string\", \"出版社\": \"string\", \"分类号\": \"string\", \"价格\": \"int\", \"内容简介\": \"string\", \"通过理由\": \"string\"}], \"rejected\": [{\"序号\": \"1\", \"题名\": \"string\", \"出版社\": \"string\", \"分类号\": \"string\", \"价格\": \"int\", \"内容简介\": \"string\", \"排除原因\": \"string\"}], \"review\": [{\"序号\": \"1\", \"题名\": \"string\", \"出版社\": \"string\", \"分类号\": \"string\", \"价格\": \"int\", \"内容简介\": \"string\", \"待复审原因\": \"string\"}]}",
+        "autoFix": true
+      },
+      "id": "e68dffbb-6c66-4683-93a4-bdaaa26a8111",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        960
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.prefilteredRejected"
+      },
+      "id": "4fe1d571-a8d5-424d-9bbe-ed5cf8e4d5c6",
+      "name": "prefilteredRejected",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JWtI9fYqcVB3NIsd",
+          "mode": "list",
+          "cachedResultName": "征订书籍",
+          "cachedResultUrl": "/projects/FnIbIrZ3F0JcVwD4/datatables/JWtI9fYqcVB3NIsd"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json[\"序号\"] }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "reject",
+            "reason": "={{ $json[\"排除原因\"] }}"
+          },
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1885b3da-a6d0-4b49-af6d-e2b5f3910eaf",
+      "name": "Update row(s)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\n\nif (inputItems.length === 0) {\n  return [{ \"json\": { \"message\": \"No response\" } }];\n}\n\nconst item = inputItems[0].json;\nlet outputObj;\ntry {\n  let cleanOutput = item.output.replace(/\\r?\\n|\\r/g, '');\n  outputObj = JSON.parse(cleanOutput);\n} catch (err) {\n  console.error(\"JSON parse error:\", err);\n  return [{ \"json\": { \"error\": \"Invalid output JSON string\" } }];\n}\n\nlet resultPassed = outputObj.passed || [];\nlet resultRejected = outputObj.rejected || [];\nlet resultReview = outputObj.review || [];\n\nconsole.log(\"AI结果解析: passed=\" + resultPassed.length + \", rejected=\" + resultRejected.length + \", review=\" + resultReview.length);\n\n// 返回三类数据，用于分别更新Data Table\nreturn [\n  { json: { type: 'passed', books: resultPassed } },\n  { json: { type: 'rejected', books: resultRejected } },\n  { json: { type: 'review', books: resultReview } }\n];"
+      },
+      "id": "3d89918b-c24a-48b6-94bc-cb85e29d537a",
+      "name": "解析AI结果1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JWtI9fYqcVB3NIsd",
+          "mode": "list",
+          "cachedResultName": "征订书籍",
+          "cachedResultUrl": "/projects/FnIbIrZ3F0JcVwD4/datatables/JWtI9fYqcVB3NIsd"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json[\"序号\"] }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "=passed2",
+            "reason": "={{ $json[\"通过理由\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "serial_no",
+              "displayName": "serial_no",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "publisher",
+              "displayName": "publisher",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "classification_no",
+              "displayName": "classification_no",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "publication_year",
+              "displayName": "publication_year",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "author",
+              "displayName": "author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "isbn",
+              "displayName": "isbn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "series_title",
+              "displayName": "series_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "physical_description",
+              "displayName": "physical_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "secondary_author",
+              "displayName": "secondary_author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "document_type",
+              "displayName": "document_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "ordered_sets",
+              "displayName": "ordered_sets",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "target_audience",
+              "displayName": "target_audience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "language",
+              "displayName": "language",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "part_title",
+              "displayName": "part_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "dimensions",
+              "displayName": "dimensions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "pagination",
+              "displayName": "pagination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "edition_description",
+              "displayName": "edition_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "order_no",
+              "displayName": "order_no",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "edition",
+              "displayName": "edition",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "volumes_per_set",
+              "displayName": "volumes_per_set",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b2dd6d99-6a05-4ae3-b578-923ffe1f5669",
+      "name": "Update Passed Rows",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2096,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JWtI9fYqcVB3NIsd",
+          "mode": "list",
+          "cachedResultName": "征订书籍",
+          "cachedResultUrl": "/projects/FnIbIrZ3F0JcVwD4/datatables/JWtI9fYqcVB3NIsd"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json[\"序号\"] }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "=rejected",
+            "reason": "={{ $json[\"排除原因\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "65e7fee5-fab8-46a8-88ea-09947e72b129",
+      "name": "Update Rejected Rows",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2096,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JWtI9fYqcVB3NIsd",
+          "mode": "list",
+          "cachedResultName": "征订书籍",
+          "cachedResultUrl": "/projects/FnIbIrZ3F0JcVwD4/datatables/JWtI9fYqcVB3NIsd"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json[\"序号\"] }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "=review",
+            "reason": "={{ $json[\"待复审原因\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f0cd956c-2226-4d8c-9bbc-a46ed485fd00",
+      "name": "Update Review Rows",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2096,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData(\"global\");\nconst passedCount = staticData.passedCount || 0;\nconst rejectedCount = staticData.rejectedCount || 0;\nconst reviewCount = staticData.reviewCount || 0;\nconst processedBatches = staticData.processedBatches || [];\n\nreturn [{ json: {\n  passedCount: passedCount,\n  rejectedCount: rejectedCount,\n  reviewCount: reviewCount,\n  processedBatches: processedBatches.length,\n  totalBatches: processedBatches.length,\n  message: \"分批处理完成\"\n} }];"
+      },
+      "id": "755afada-d55d-4f2e-b03a-bdff8ea0bb5d",
+      "name": "汇总输出",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JWtI9fYqcVB3NIsd",
+          "mode": "list",
+          "cachedResultName": "征订书籍",
+          "cachedResultUrl": "/projects/FnIbIrZ3F0JcVwD4/datatables/JWtI9fYqcVB3NIsd"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "keyValue": "passed"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "5df6f5a3-95b6-453d-add7-8a0910656f82",
+      "name": "Get Passed",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2656,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "compression": false,
+          "headerRow": true
+        }
+      },
+      "id": "4df2d8cb-6879-4773-916b-aba89ba8ecb9",
+      "name": "Convert Passed to XLSX",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2880,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JWtI9fYqcVB3NIsd",
+          "mode": "list",
+          "cachedResultName": "征订书籍",
+          "cachedResultUrl": "/projects/FnIbIrZ3F0JcVwD4/datatables/JWtI9fYqcVB3NIsd"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "keyValue": "reject"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "cca88d0d-79de-4d8e-81be-ab820be1a0be",
+      "name": "Get Reject",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2656,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "compression": false,
+          "headerRow": true
+        }
+      },
+      "id": "f046a27b-9e17-4cda-be02-6fb1166762bc",
+      "name": "Convert Rejected to XLSX",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2880,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JWtI9fYqcVB3NIsd",
+          "mode": "list",
+          "cachedResultName": "征订书籍",
+          "cachedResultUrl": "/projects/FnIbIrZ3F0JcVwD4/datatables/JWtI9fYqcVB3NIsd"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "keyValue": "review"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "a55ea09d-9fcd-45fd-9da7-e17c25dde897",
+      "name": "Get Review",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2656,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "compression": false,
+          "headerRow": true
+        }
+      },
+      "id": "2e049b26-aa53-4461-baa7-82ecb5651650",
+      "name": "Convert Review to XLSX",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2880,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "hideThinking": true,
+          "maxTokens": 102400,
+          "maxRetries": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMinimax",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        1168
+      ],
+      "id": "7077ae53-f71c-4ad1-986f-8356a696fb31",
+      "name": "MiniMax Chat Model1",
+      "credentials": {
+        "minimaxApi": {
+          "id": "CqhZQVThlrppcyOq",
+          "name": "MiniMax account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "passed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "6a4f6854-5bd6-4fcd-86ad-f9cf6cf8e3d0"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a7d26f67-0059-49c0-8da7-963c8891b0f6",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "rejected",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e23cca73-1753-4ff5-b6c0-847c00234f42",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1600,
+        672
+      ],
+      "id": "d1a06147-851b-441a-b210-34bfca02ba02",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nreturn $input.first().json.books"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        496
+      ],
+      "id": "a31a5006-1d20-4f25-87ff-e84e011e3f7e",
+      "name": "get passed"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nreturn $input.first().json.books"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        656
+      ],
+      "id": "ea4085f4-2dd5-4692-bdd1-78e750b0baab",
+      "name": "get rejected"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nreturn $input.first().json.books"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        816
+      ],
+      "id": "4446d1f2-e4be-4bef-9aec-989f8ba12e34",
+      "name": "get review"
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "JWtI9fYqcVB3NIsd",
+          "mode": "list",
+          "cachedResultName": "征订书籍",
+          "cachedResultUrl": "/projects/FnIbIrZ3F0JcVwD4/datatables/JWtI9fYqcVB3NIsd"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "isNotEmpty"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "78c8364d-2be8-4a2e-89b8-c486ce7dfa30",
+      "name": "Delete row(s)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 输出文件 \n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/components/sticky-notes/)",
+        "height": 880,
+        "width": 624
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2560,
+        224
+      ],
+      "typeVersion": 1,
+      "id": "96414462-a67f-40f9-bfa7-7f1862dea63d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 书籍导入\n**操作** 从本地excel中读取待征订书籍",
+        "height": 272,
+        "width": 1088
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        960,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "ce7c49a1-8d02-4e91-abd1-ca99d09d2f1b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "MiniMax-M3"
+        },
+        "messages": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.minimax",
+      "typeVersion": 1.2,
+      "position": [
+        3296,
+        -160
+      ],
+      "id": "2616ffc8-8c5b-4aeb-82c9-8d1a7c92fcf0",
+      "name": "Message a model1",
+      "credentials": {
+        "minimaxApi": {
+          "id": "CqhZQVThlrppcyOq",
+          "name": "MiniMax account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "MiniMax-M3"
+        },
+        "options": {
+          "timeout": 3600000,
+          "maxRetries": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMinimax",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        944
+      ],
+      "id": "2d5859b4-425a-48a4-9512-f05394992e54",
+      "name": "MiniMax Chat Model2",
+      "credentials": {
+        "minimaxApi": {
+          "id": "CqhZQVThlrppcyOq",
+          "name": "MiniMax account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Variables": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "预过滤": {
+      "main": [
+        [
+          {
+            "node": "needsAIFilter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "prefilteredRejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "needsAIFilter": {
+      "main": [
+        [
+          {
+            "node": "分批处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "分批处理": {
+      "main": [
+        [
+          {
+            "node": "汇总输出",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "断点检查",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "断点检查": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "解析AI结果1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Message a model",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prefilteredRejected": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析AI结果1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "分批处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Passed": {
+      "main": [
+        [
+          {
+            "node": "Convert Passed to XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Reject": {
+      "main": [
+        [
+          {
+            "node": "Convert Rejected to XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Review": {
+      "main": [
+        [
+          {
+            "node": "Convert Review to XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MiniMax Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "预过滤",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "get passed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get rejected",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get passed": {
+      "main": [
+        [
+          {
+            "node": "Update Passed Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get rejected": {
+      "main": [
+        [
+          {
+            "node": "Update Rejected Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get review": {
+      "main": [
+        [
+          {
+            "node": "Update Review Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete row(s)": {
+      "main": [
+        []
+      ]
+    },
+    "MiniMax Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Message a model",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ce0caa26-e575-4d83-a534-ea3767549020",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0c2459cd7ead7770ebf558a129ecbbc991e88b10999ec5444bf7f35484e3dc09"
+  },
+  "nodeGroups": [],
+  "id": "wiD75U1zfrGbQE3t",
+  "tags": []
+}

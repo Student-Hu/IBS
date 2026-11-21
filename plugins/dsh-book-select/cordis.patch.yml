@@ -1,0 +1,10 @@
+# dsh-book-select bundle patch: one host entry mounting the plugin.
+#
+# The plugin owns the /book-select/api prefix route, so a second mount of the
+# same package would fail the whole plugin tree at boot ("duplicate prefix
+# route"). The guard below backs this row off when another enabled entry
+# already mounts dsh-book-select.
+- insert:
+    - id: book-select
+      name: 'dsh-book-select'
+      disabled: !!js "[...ctx.loader.entries()].some((e) => e.options.name === 'dsh-book-select' && e.options.id !== 'book-select' && !e.disabled)"
