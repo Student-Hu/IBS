@@ -92,9 +92,7 @@ window.__ModuleLoader__.load({
       filterAll: '全部',
       search: '搜索书名、出版社、分类号或判定依据',
       export: '导出 CSV',
-      exportScope: '导出范围',
-      scopeAll: '全部书目',
-      scopePassed: '仅通过的',
+      exportHint: '导出当前视图的 {count} 本',
       colNo: '序号',
       colTitle: '书名',
       colPublisher: '出版社',
@@ -230,9 +228,7 @@ window.__ModuleLoader__.load({
       filterAll: 'All',
       search: 'Search title, publisher, classification or evidence',
       export: 'Export CSV',
-      exportScope: 'Export',
-      scopeAll: 'All books',
-      scopePassed: 'Passed only',
+      exportHint: 'Export the {count} shown here',
       colNo: 'No.',
       colTitle: 'Title',
       colPublisher: 'Publisher',
@@ -557,7 +553,6 @@ window.__ModuleLoader__.load({
       const [tab, setTab] = React.useState('data')
       const [filter, setFilter] = React.useState('all')
       const [query, setQuery] = React.useState('')
-      const [exportScope, setExportScope] = React.useState('all')
       const [busy, setBusy] = React.useState('')
       const [error, setError] = React.useState('')
       const [messages, setMessages] = React.useState([])
@@ -855,8 +850,10 @@ window.__ModuleLoader__.load({
       /**
        * Export the rows in the shape they were imported: every source column,
        * in its original order and with its original header, followed by the
-       * four columns the workbench adds. Records without preserved cells (for
+       * columns the workbench adds. Records without preserved cells (for
        * example a manually edited state) fall back to the canonical fields.
+       * The export follows the current view: the status tab and the search
+       * box decide which books are written out.
        */
       const doExport = () => {
         const sourceColumns = Array.isArray(summary?.columns) ? summary.columns : []
@@ -877,16 +874,15 @@ window.__ModuleLoader__.load({
             ? baseColumns.map((_, column) => item.cells[column] ?? '')
             : fallbackCells(item)
         )
-        const rows = (exportScope === 'passed' ? visible.filter((item) => item.status === 'passed') : visible)
-          .map((item) => [
-            ...sourceCells(item),
-            t(STATUS_LABEL[item.status] ?? 'statusPending'),
-            item.reason,
-            item.source === '' ? '' : t(SOURCE_LABEL[item.source] ?? 'sourceAi'),
-            item.hint,
-            item.note ?? '',
-          ])
-        const scope = exportScope === 'passed' ? 'passed' : 'all'
+        const rows = visible.map((item) => [
+          ...sourceCells(item),
+          t(STATUS_LABEL[item.status] ?? 'statusPending'),
+          item.reason,
+          item.source === '' ? '' : t(SOURCE_LABEL[item.source] ?? 'sourceAi'),
+          item.hint,
+          item.note ?? '',
+        ])
+        const scope = filter === 'all' ? 'all' : filter
         downloadCsv([header, ...rows], `book-selection-${scope}-${new Date().toISOString().slice(0, 10)}.csv`)
       }
 
@@ -1140,17 +1136,7 @@ window.__ModuleLoader__.load({
         h('div', { className: 'bsx-chips' }, filterChips),
         h('div', { className: 'bsx-row', style: { flex: 1, justifyContent: 'flex-end', minWidth: 320 } },
           h('input', { className: 'bsx-input', value: query, placeholder: t('search'), onChange: (event) => setQuery(event.target.value) }),
-          h('label', { className: 'bsx-hint', style: { display: 'flex', alignItems: 'center', gap: 6 } },
-            t('exportScope'),
-            h('select', {
-              className: 'bsx-select',
-              value: exportScope,
-              onChange: (event) => setExportScope(event.target.value),
-            },
-              h('option', { value: 'all' }, t('scopeAll')),
-              h('option', { value: 'passed' }, t('scopePassed')),
-            ),
-          ),
+          h('span', { className: 'bsx-hint' }, t('exportHint', { count: visible.length })),
           h('button', { className: 'bsx-btn', type: 'button', disabled: visible.length === 0, onClick: doExport }, t('export')),
         ),
       )

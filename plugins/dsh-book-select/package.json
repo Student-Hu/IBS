@@ -1,6 +1,6 @@
 {
   "name": "dsh-book-select",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "type": "module",
   "description": "Book selection workbench for an academic library: hard-rule prefilter plus LLM screening, with a Q&A panel about the selection design.",
   "license": "MIT",
