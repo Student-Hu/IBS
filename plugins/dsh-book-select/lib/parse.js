@@ -346,6 +346,7 @@ function buildBook(cells, mapping, index) {
     status: 'pending',
     reason: '',
     source: '',
+    note: '',
     batch: null,
   }
 }

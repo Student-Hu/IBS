@@ -249,6 +249,9 @@ function bookOf(item) {
     status: item.status,
     reason: item.reason,
     source: item.source,
+    // The librarian's own remark on this book: free text, independent of the
+    // verdict, written by hand and kept with the record.
+    note: item.note ?? '',
   }
 }
 
@@ -662,7 +665,7 @@ export function apply(ctx) {
     let items = state.items
     if (status !== '' && status !== 'all') items = items.filter((item) => item.status === status)
     if (query !== '') {
-      items = items.filter((item) => [item.title, item.author, item.publisher, item.cls, item.reason]
+      items = items.filter((item) => [item.title, item.author, item.publisher, item.cls, item.reason, item.note]
         .some((value) => String(value ?? '').toLowerCase().includes(query)))
     }
     return {
@@ -684,6 +687,23 @@ export function apply(ctx) {
     book.status = status
     book.source = 'manual'
     if (typeof payload.reason === 'string' && payload.reason.trim() !== '') book.reason = payload.reason.trim()
+    state.revision++
+    void persist(state)
+    return summaryOf(state, ctx)
+  }
+
+  /**
+   * The librarian's own note on one book. Free text, independent of the
+   * verdict: it never changes the status, only records the human reading.
+   * @param {object} state - the session state.
+   * @param {{id: string, note?: string}} payload - the book id and the text.
+   * @returns {object} the summary after the note is stored.
+   */
+  const doSetNote = (state, payload) => {
+    const id = String(payload.id ?? '')
+    const book = state.items.find((item) => item.id === id)
+    if (book === undefined) throw new RequestError(404, 'not-found', `找不到编号为 ${id} 的图书。`)
+    book.note = String(payload.note ?? '').replace(/\r\n/g, '\n').trim()
     state.revision++
     void persist(state)
     return summaryOf(state, ctx)
@@ -726,6 +746,7 @@ export function apply(ctx) {
     },
     results: (payload) => doResults(stateFor(payload.sessionId), payload),
     setStatus: (payload) => doSetStatus(stateFor(payload.sessionId), payload),
+    setNote: (payload) => doSetNote(stateFor(payload.sessionId), payload),
     reset: (payload) => {
       const state = stateFor(payload.sessionId)
       state.abort?.abort(new Error('用户重置了会话'))
@@ -789,7 +810,7 @@ export function apply(ctx) {
    */
   const tool = {
     name: 'book_select',
-    description: 'Acquisition screening for the sidebar "选书 / Book Select" panel. The panel holds one shared book list for the whole app: import an acquisition list (pasted table text, CSV, TSV, JSON array, or base64 .xlsx), run the deterministic prefilter plus model screening, read the verdicts, or ask about the selection rules themselves. `run` starts a background job and returns immediately; poll `status` (or `results`) until `job.running` is false. A run only screens books still in `pending`, then retries books parked in `failed` (a model/transport error, not a verdict); it never re-judges a book that already has a verdict. `run` screens up to `concurrency` batches at once (1-6, default 3). Statuses are pending/passed/rejected/review/failed; `set_status` overrides one book manually.',
+    description: 'Acquisition screening for the sidebar "选书 / Book Select" panel. The panel holds one shared book list for the whole app: import an acquisition list (pasted table text, CSV, TSV, JSON array, or base64 .xlsx), run the deterministic prefilter plus model screening, read the verdicts, or ask about the selection rules themselves. `run` starts a background job and returns immediately; poll `status` (or `results`) until `job.running` is false. A run only screens books still in `pending`, then retries books parked in `failed` (a model/transport error, not a verdict); it never re-judges a book that already has a verdict. `run` screens up to `concurrency` batches at once (1-6, default 3). Statuses are pending/passed/rejected/review/failed; `set_status` overrides one book manually; `set_note` stores the librarian\'s own remark on one book without changing its verdict.',
     parameters: {
       type: 'object',
       additionalProperties: false,
@@ -797,21 +818,22 @@ export function apply(ctx) {
       properties: {
         action: {
           type: 'string',
-          enum: ['status', 'import', 'sample', 'run', 'cancel', 'results', 'set_status', 'rules', 'history', 'load_history', 'delete_history', 'ask', 'reset'],
-          description: 'status: session summary + books. import: load text/tsv/csv/json book list. sample: load the 12 demo records. run: screen books still pending, then retry failed ones. cancel: stop the running job. results: filtered verdict list. set_status: override one book. rules: rule documentation. history: list saved lists. load_history: restore one saved list. delete_history: drop one saved list. ask: question about the rules or the design. reset: clear the session.',
+          enum: ['status', 'import', 'sample', 'run', 'cancel', 'results', 'set_status', 'set_note', 'rules', 'history', 'load_history', 'delete_history', 'ask', 'reset'],
+          description: 'status: session summary + books. import: load text/tsv/csv/json book list. sample: load the 12 demo records. run: screen books still pending, then retry failed ones. cancel: stop the running job. results: filtered verdict list. set_status: override one book. set_note: write the librarian\'s own note on one book. rules: rule documentation. history: list saved lists. load_history: restore one saved list. delete_history: drop one saved list. ask: question about the rules or the design. reset: clear the session.',
         },
         session_id: { type: 'string', description: 'Target list key. Defaults to the shared workbench list that the sidebar panel shows.' },
         text: { type: 'string', description: 'For import: pasted table text (TSV from Excel), CSV, or a JSON array of books.' },
         base64: { type: 'string', description: 'For import: base64 content of an .xlsx / .csv / .txt file.' },
         filename: { type: 'string', description: 'For import: original filename, used to pick the parser.' },
         status: { type: 'string', description: 'For results: all (default) | pending | passed | rejected | review | failed. For set_status: pending | passed | rejected | review | failed.' },
-        query: { type: 'string', description: 'For results: substring filter over title/author/publisher/classification/reason.' },
+        query: { type: 'string', description: 'For results: substring filter over title/author/publisher/classification/reason/note.' },
         limit: { type: 'integer', description: 'For results: maximum rows to return (1-2000, default 500).' },
         batch_size: { type: 'integer', description: 'For run: books per model call (5-40, default 15).' },
         concurrency: { type: 'integer', description: 'For run: how many batches to screen at once (1-6, default 3).' },
-        book_id: { type: 'string', description: 'For set_status: the book id from status/results.' },
+        book_id: { type: 'string', description: 'For set_status / set_note: the book id from status/results.' },
         history_id: { type: 'string', description: 'For load_history / delete_history: the id from the history list.' },
         reason: { type: 'string', description: 'For set_status: optional evidence/reason to record.' },
+        note: { type: 'string', description: 'For set_note: the remark to store on that book (empty string clears it).' },
         question: { type: 'string', description: 'For ask: the question about the rules or the design.' },
       },
     },
@@ -843,6 +865,8 @@ export function apply(ctx) {
           return operations.results({ ...base, status: args.status, query: args.query, limit: args.limit })
         case 'set_status':
           return operations.setStatus({ ...base, id: args.book_id, status: args.status, reason: args.reason })
+        case 'set_note':
+          return operations.setNote({ ...base, id: args.book_id, note: args.note })
         case 'rules':
           return operations.rules()
         case 'history':

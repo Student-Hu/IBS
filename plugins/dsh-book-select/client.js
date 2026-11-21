@@ -104,6 +104,8 @@ window.__ModuleLoader__.load({
       colStatus: '状态',
       colReason: '判定依据 / 改判',
       colSource: '判定来源',
+      colNote: '批注',
+      notePlaceholder: '写点你自己的判断…',
       colAuthor: '责任者',
       colYear: '出版年',
       detailOpen: '展开内容简介',
@@ -240,6 +242,8 @@ window.__ModuleLoader__.load({
       colStatus: 'Status',
       colReason: 'Evidence / override',
       colSource: 'Verdict by',
+      colNote: 'Note',
+      notePlaceholder: 'Your own reading…',
       colAuthor: 'Author',
       colYear: 'Year',
       detailOpen: 'Show summary',
@@ -363,6 +367,10 @@ window.__ModuleLoader__.load({
       .bsx-badge.review { background: var(--bsx-warn-soft); color: var(--bsx-warn-text); }
       .bsx-badge.failed { background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 13%, transparent); color: var(--dsw-alias-state-error-primary); border:1px dashed currentColor; }
       .bsx-reason { color: var(--bsx-faint); font-size:11px; margin-top:2px; white-space:pre-wrap; word-break:break-word; }
+      .bsx-note { width:100%; min-height:30px; box-sizing:border-box; resize:vertical; border:1px solid transparent; border-radius:6px; background: transparent; color: var(--dsw-alias-label-primary); font:inherit; font-size:11.5px; line-height:1.45; padding:2px 4px; }
+      .bsx-note:hover { border-color: var(--dsw-alias-border-l2); }
+      .bsx-note:focus { outline:none; border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-bg-layer-2); }
+      .bsx-note::placeholder { color: var(--bsx-faint); }
       .bsx-select { border:1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-secondary); border-radius:6px; padding:1px 4px; font:inherit; font-size:11px; }
       .bsx-progress { height:4px; border-radius:999px; background: var(--bsx-layer-3); overflow:hidden; }
       .bsx-progress > div { height:100%; background: var(--dsw-alias-brand-primary); transition: width .3s ease; }
@@ -566,6 +574,8 @@ window.__ModuleLoader__.load({
       const [monitorOpen, setMonitorOpen] = React.useState(false)
       const [monitorTouched, setMonitorTouched] = React.useState(false)
       const [showAllBatches, setShowAllBatches] = React.useState(false)
+      // Uncommitted text of the note cell being edited, keyed by book id.
+      const [noteDraft, setNoteDraft] = React.useState({})
       const [now, setNow] = React.useState(() => Date.now())
       const [, setLocaleRevision] = React.useState(0)
       const fileRef = React.useRef(null)
@@ -706,7 +716,7 @@ window.__ModuleLoader__.load({
         return items.filter((item) => {
           if (filter !== 'all' && item.status !== filter) return false
           if (needle === '') return true
-          return [item.title, item.author, item.publisher, item.cls, item.reason]
+          return [item.title, item.author, item.publisher, item.cls, item.reason, item.note]
             .some((value) => String(value ?? '').toLowerCase().includes(needle))
         })
       }, [items, filter, query])
@@ -783,6 +793,23 @@ window.__ModuleLoader__.load({
         setItems((previous) => previous.map((item) => (item.id === id ? { ...item, status, source: 'manual' } : item)))
       })
 
+      /**
+       * Store the librarian's own note on one book. The note is free text and
+       * never touches the verdict; it rides along with the record, so it is
+       * saved with the list and exported with the rows.
+       */
+      const saveNote = (id, value) => guard(`note:${id}`, async () => {
+        const note = String(value ?? '').replace(/\r\n/g, '\n').trim()
+        setNoteDraft((previous) => {
+          const next = { ...previous }
+          delete next[id]
+          return next
+        })
+        const result = await call('setNote', { sessionId, id, note })
+        setSummary(result)
+        setItems((previous) => previous.map((item) => (item.id === id ? { ...item, note } : item)))
+      })
+
       /** Re-read the saved-list index; every import and judged batch adds one. */
       const refreshHistory = React.useCallback(async () => {
         const value = await call('history', {})
@@ -838,7 +865,7 @@ window.__ModuleLoader__.load({
           t('colAuthor'), t('colYear'), t('colPrice'), t('colPages'), t('detailSummary'),
         ]
         const baseColumns = sourceColumns.length > 0 ? sourceColumns : fallbackColumns
-        const header = [...baseColumns, t('colStatus'), t('colReason'), t('colSource'), t('detailHint')]
+        const header = [...baseColumns, t('colStatus'), t('colReason'), t('colSource'), t('detailHint'), t('colNote')]
         const fallbackCells = (item) => [
           item.no, item.title, item.publisher, item.cls, item.isbn,
           item.author, item.year === 0 ? '' : item.year,
@@ -857,6 +884,7 @@ window.__ModuleLoader__.load({
             item.reason,
             item.source === '' ? '' : t(SOURCE_LABEL[item.source] ?? 'sourceAi'),
             item.hint,
+            item.note ?? '',
           ])
         const scope = exportScope === 'passed' ? 'passed' : 'all'
         downloadCsv([header, ...rows], `book-selection-${scope}-${new Date().toISOString().slice(0, 10)}.csv`)
@@ -1159,10 +1187,38 @@ window.__ModuleLoader__.load({
               onChange: (event) => override(item.id, event.target.value),
             }, ['passed', 'rejected', 'review', 'pending', 'failed'].map((status) => h('option', { key: status, value: status }, t(STATUS_LABEL[status])))),
           ),
+          h('td', {},
+            h('textarea', {
+              className: 'bsx-note',
+              rows: 2,
+              placeholder: t('notePlaceholder'),
+              value: noteDraft[item.id] ?? item.note ?? '',
+              onChange: (event) => setNoteDraft((previous) => ({ ...previous, [item.id]: event.target.value })),
+              onBlur: () => {
+                const draft = noteDraft[item.id]
+                if (draft === undefined) return
+                if (draft.trim() === String(item.note ?? '').trim()) {
+                  setNoteDraft((previous) => {
+                    const next = { ...previous }
+                    delete next[item.id]
+                    return next
+                  })
+                  return
+                }
+                void saveNote(item.id, draft)
+              },
+              onKeyDown: (event) => {
+                if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                  event.preventDefault()
+                  event.currentTarget.blur()
+                }
+              },
+            }),
+          ),
         ))
         if (open) {
           rows.push(h('tr', { key: `${item.id}-detail` },
-            h('td', { colSpan: 9, style: { background: 'var(--dsw-alias-bg-layer-1)', padding: '10px 12px' } },
+            h('td', { colSpan: 10, style: { background: 'var(--dsw-alias-bg-layer-1)', padding: '10px 12px' } },
               h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
                 h('div', { style: { whiteSpace: 'pre-wrap', lineHeight: 1.6 } }, item.summary === '' ? '—' : item.summary),
                 h('div', { className: 'bsx-hint' }, `${t('detailIsbn')} ${item.isbn === '' ? '—' : item.isbn} · ${t('detailEdition')} ${item.edition === '' ? '—' : item.edition}`),
@@ -1174,8 +1230,8 @@ window.__ModuleLoader__.load({
       }
 
       const emptyRow = items.length === 0
-        ? h('tr', {}, h('td', { colSpan: 9, style: { padding: 0 } }, pickPrompt))
-        : h('tr', {}, h('td', { colSpan: 9, style: { padding: '40px 16px', textAlign: 'center' } },
+        ? h('tr', {}, h('td', { colSpan: 10, style: { padding: 0 } }, pickPrompt))
+        : h('tr', {}, h('td', { colSpan: 10, style: { padding: '40px 16px', textAlign: 'center' } },
           h('div', { className: 'bsx-empty-title' }, t('emptyTitle')),
           h('div', { className: 'bsx-empty-body', style: { marginTop: 4 } }, t('emptyFiltered')),
         ))
@@ -1247,6 +1303,7 @@ window.__ModuleLoader__.load({
               h('col', { style: { width: 62 } }),
               h('col', { style: { width: 68 } }),
               h('col', {}),
+              h('col', { style: { width: 180 } }),
             ),
             h('thead', {}, h('tr', {},
               h('th', {}, t('colNo')),
@@ -1258,6 +1315,7 @@ window.__ModuleLoader__.load({
               h('th', {}, t('colPages')),
               h('th', {}, t('colStatus')),
               h('th', {}, t('colReason')),
+              h('th', {}, t('colNote')),
             )),
             h('tbody', {}, visible.length === 0 ? emptyRow : rows),
           ),
