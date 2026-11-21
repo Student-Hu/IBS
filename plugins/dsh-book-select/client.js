@@ -92,7 +92,9 @@ window.__ModuleLoader__.load({
       filterAll: '全部',
       search: '搜索书名、出版社、分类号或判定依据',
       export: '导出 CSV',
-      exportHint: '导出当前视图的 {count} 本',
+      exportHint: '导出 {scope} {count} 本',
+      exportHintSearch: '（搜索「{query}」命中）',
+      scopeAllBooks: '全部书目',
       colNo: '序号',
       colTitle: '书名',
       colPublisher: '出版社',
@@ -228,7 +230,9 @@ window.__ModuleLoader__.load({
       filterAll: 'All',
       search: 'Search title, publisher, classification or evidence',
       export: 'Export CSV',
-      exportHint: 'Export the {count} shown here',
+      exportHint: 'Export {count} × {scope}',
+      exportHintSearch: '(matches "{query}")',
+      scopeAllBooks: 'all books',
       colNo: 'No.',
       colTitle: 'Title',
       colPublisher: 'Publisher',
@@ -501,6 +505,16 @@ window.__ModuleLoader__.load({
 
     /** Verdict origin → dictionary key. */
     const SOURCE_LABEL = { rule: 'sourceRule', ai: 'sourceAi', manual: 'sourceManual' }
+
+    /** Status tab → dictionary key, used to describe what an export contains. */
+    const FILTER_LABEL = {
+      all: 'scopeAllBooks',
+      pending: 'statusPending',
+      passed: 'statusPassed',
+      rejected: 'statusRejected',
+      review: 'statusReview',
+      failed: 'statusFailed',
+    }
 
     /** Batch sizes offered in the run bar. */
     const BATCH_CHOICES = [5, 10, 15, 20, 30, 40]
@@ -1132,12 +1146,17 @@ window.__ModuleLoader__.load({
         onClick: () => setFilter(value),
       }, `${label} ${count}`))
 
+      // What the export button is about to write: the status tab, the search
+      // term and how many books that adds up to.
+      const exportTabLabel = t(FILTER_LABEL[filter] ?? 'scopeAllBooks')
+      const exportHintText = `${t('exportHint', { scope: exportTabLabel, count: visible.length })}${query.trim() === '' ? '' : ` ${t('exportHintSearch', { query: query.trim() })}`}`
+
       const toolbar = h('div', { className: 'bsx-row', key: 'toolbar' },
         h('div', { className: 'bsx-chips' }, filterChips),
         h('div', { className: 'bsx-row', style: { flex: 1, justifyContent: 'flex-end', minWidth: 320 } },
           h('input', { className: 'bsx-input', value: query, placeholder: t('search'), onChange: (event) => setQuery(event.target.value) }),
-          h('span', { className: 'bsx-hint' }, t('exportHint', { count: visible.length })),
-          h('button', { className: 'bsx-btn', type: 'button', disabled: visible.length === 0, onClick: doExport }, t('export')),
+          h('span', { className: 'bsx-hint', title: exportHintText }, exportHintText),
+          h('button', { className: 'bsx-btn', type: 'button', title: exportHintText, disabled: visible.length === 0, onClick: doExport }, t('export')),
         ),
       )
 
