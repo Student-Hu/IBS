@@ -4,14 +4,14 @@
 
 ## 安装
 
-前置条件：Node.js ≥ 20，DeepSeek Harness（DSH）≥ 0.2.0（`package.json` 的 `engines.dsh` 已声明；版本不匹配时 DSH 会拒绝安装，可用 `dsh plugin --profile <profile> allow-version dsh-book-select@0.1.3 --dsh-version <你的版本> --accept-risk` 放行）。插件本体零第三方运行时依赖，只需把本包装进你的 DSH profile。
+前置条件：Node.js ≥ 20，DeepSeek Harness（DSH）≥ 0.2.0（`package.json` 的 `engines.dsh` 已声明；版本不匹配时 DSH 会拒绝安装，可用 `dsh plugin --profile <profile> allow-version dsh-book-select@0.1.4 --dsh-version <你的版本> --accept-risk` 放行）。插件本体零第三方运行时依赖，只需把本包装进你的 DSH profile。
 
 **方式一：安装 tarball（推荐给别人）**
 
-下载 `dsh-book-select-0.1.3.tgz` 后：
+下载 `dsh-book-select-0.1.4.tgz` 后：
 
 ```bash
-dsh plugin --profile <你的 profile> add <绝对路径>/dsh-book-select-0.1.3.tgz
+dsh plugin --profile <你的 profile> add <绝对路径>/dsh-book-select-0.1.4.tgz
 ```
 
 也可以在 GUI 的「插件」面板里，把 tarball 的**绝对路径**填进安装框。DSH 会把它按 `pnpm add file:...` 装进 profile，自动把本包追加进 `dsh.profile.bundles` 并加载它的 `cordis.patch.yml`——不需要手改 profile 的 patch 文件。装完重启 DSH，浏览器硬刷新（Ctrl+Shift+R）。
@@ -49,6 +49,19 @@ dsh plugin --profile <你的 profile> add github:<你的账号>/<仓库>
 7. 「规则说明」页列出全部硬规则（含本次命中数）、九类分类号规则、内容排除规则、I 类出版社白名单与敏感关键词，以及模型的输出契约。
 8. 「设计问答」页可以问规则与实现的任何细节（为什么阈值是 500 元、批大小怎么选、再加一条规则要改哪里……）。回答只依据规则原文与本文档所述实现，规则没写到的地方会直说未覆盖。
 
+## 批次监控
+
+判定开始后，进度条旁边会出现「批次监控」按钮和一枚徽标（在跑时显示「N 批在跑」，跑完显示「已完成 N 批」）。点开（或每轮判定自动展开一次）可以看到：
+
+- **在跑的批**：每批一行——批号、本数、书名、当前阶段（调用模型中 / 解析返回 / 限流退避 N 秒后重试 / 拆批重试 / 写回判定）和已耗时。耗时在本地每秒跳动，不必等下一次轮询。
+- **已完成的批**：批号、本数、用时、三桶计数（通过/排除/待复审）与该批的 token 用量；默认只列最近 10 条，点「展开全部 N 批」看完整报告。
+- **本轮汇总**：总耗时、平均每批耗时、最慢的一批，以及本轮 token 用量（输入 / 输出 / 合计 / 平均每本）。
+- **token 条**里的「每批固定规则提示 ≈ N 输入」是这轮里各批输入 token 的最小值——规则提示词每批都要重发一遍，所以它能直观说明「批大小调大更省」。
+
+跑完之后面板不会消失，它就是这一轮的**批次报告**：每个批次的记录都随存档一起落在 `$DSH_HOME/book-select/history/<id>.json` 的 `job.batchLog` 里，下次从「历史」载入那份清单时还能看到当时的批次报告。
+
+token 数字来自模型调用返回的 usage 块（DSH 的 llm 流在 `finish` 之前会推一段 usage），只统计**插件自己发出的调用**，不换算金额（金额需要每模型单价表，容易过期反而误导）。
+
 ## 规则从哪来
 
 `doc/图书馆图书采购筛选工作流-new.json` 是原 n8n 工作流，抽出的规则原文与脚本在 `doc/extracted/`。迁移时保持语义等价：
@@ -83,17 +96,17 @@ dsh plugin --profile <你的 profile> add github:<你的账号>/<仓库>
 ```
 package.json        dsh.bundle.patch + dsh.client（web / immediately / inject）
 cordis.patch.yml    插入 book-select 条目（带重复挂载保护）
-index.js            Host 入口：/book-select/api/* 路由、内存状态、分批任务、book_select 工具
-client.js           浏览器入口：注册 sidebar.panellist 图标 + main 面板工作台组件
+index.js            Host 入口：/book-select/api/* 路由、内存状态、分批任务、批次报告（job.batchLog）、book_select 工具
+client.js           浏览器入口：注册 sidebar.panellist 图标 + main 面板工作台组件（批次监控面板在这里）
 lib/rules.js        规则常量 + 预过滤实现 + 给模型的 system prompt
 lib/parse.js        xlsx / CSV / TSV / JSON 解析与字段归一化
-lib/screening.js    模型调用（llm.stream 聚合成文本）、输出解析、设计问答
+lib/screening.js    模型调用（llm.stream 聚合成文本、接住 usage 块、阶段回调）、输出解析、设计问答
 lib/scheduler.js    批次池（有界并发）、共享冷却闸（限流时让所有 worker 一起等）
 locale/*.json       插件卡片标题与描述（中英）
 ```
 
 - **宿主与浏览器怎么通信**：Host 半边在 `/book-select/api` 挂一个 prefix 路由，只接受 POST，先用 `connection.requestRejection` 做同源检查，再按路径尾段分派到 `operations` 表。UI 用同源 `fetch` 调同一张表，所以界面与工具的行为不会分叉。
-- **模型调用**：走 `ctx.llm.stream()`，模型取 `agentDefaultModel.currentSelection()`（即当前会话选的模型），判定 `temperature: 0`、`maxTokens: 16000`（推理模型的思考也吃这份预算，太小会整批空返回，此时会按 `/没有返回任何文本|JSON/` 判定为可恢复错误并自动对半拆批重试，最多 3 层）；限流（失败码 `RATE_LIMIT`）不拆批，而是退避后重试同一批，最多 3 次；问答 `temperature: 0.2`、`maxTokens: 2600`，并限制默认 400 字以内以免被截断。
+- **模型调用**：走 `ctx.llm.stream()`，模型取 `agentDefaultModel.currentSelection()`（即当前会话选的模型），判定 `temperature: 0`、`maxTokens: 16000`（推理模型的思考也吃这份预算，太小会整批空返回，此时会按 `/没有返回任何文本|JSON/` 判定为可恢复错误并自动对半拆批重试，最多 3 层）；限流（失败码 `RATE_LIMIT`）不拆批，而是退避后重试同一批，最多 3 次；问答 `temperature: 0.2`、`maxTokens: 2600`，并限制默认 400 字以内以免被截断。`lib/screening.js` 还会把每次调用推来的 usage 块与当前阶段（调用/解析/退避/拆批）通过 `onUsage` / `onStage` 回调报给 Host，Host 据此写出批次报告。
 - **给 Agent 的工具**：`book_select`，参数与 HTTP 接口一一对应（`action` 取 `status/import/sample/run/cancel/results/set_status/rules/history/load_history/delete_history/ask/reset`）。默认操作与侧边栏面板同一个清单（键 `workbench`），所以“帮我把这份书单筛一遍”这类话，Agent 直接调工具即可，界面上会看到同一份结果。
 - **状态放哪**：当前工作清单在 Host 进程内存里，按清单键（UI 固定 `workbench`）存。存档另存为 JSON 文件：每份清单一个文件，放在 `$DSH_HOME/book-select/history/<id>.json`（默认 `C:\Users\<你>\.dsh\book-select\history`），导入时写一次、每批判定后再写一次、人工改判也写，最多保留 40 份。插件重载会丢掉内存里的当前清单，但历史存档还在，点「历史」载入即可继续。
 
@@ -103,4 +116,5 @@ locale/*.json       插件卡片标题与描述（中英）
 - xlsx 里的日期单元格按序列号原样读出（书目数据基本不用日期列）。
 - 单次导入上限 5000 条；表格按页渲染（默认每页 50 条，最多 200 条），筛选与导出不受分页限制。
 - 并发度越高越容易撞 provider 限流；插件会自动退避重试同一批，但并发调到 6 路仍频繁失败时，把「并发」调回 1–2 就能退回串行行为（不改变判定口径）。
+- 批次报告按批次粒度记录：拆批重试时同一行只显示最后一次上报的阶段；token 只统计插件自己发出的调用，不含 DSH 对话本身的开销，也不换算金额。
 - 判定质量取决于模型对分类号与内容简介的理解；信息不足的书应落在「待复审」而不是硬判——这也是规则里“宽进严出”的本意。

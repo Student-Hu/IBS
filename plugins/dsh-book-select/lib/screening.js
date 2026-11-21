@@ -86,7 +86,7 @@ function withDeadline(signal, ms) {
  * final `text` block, or both, so a delta-less block is taken from `block-end`
  * instead of being dropped.
  * @param {object} ctx - plugin context.
- * @param {{system?: string, messages: object[], temperature?: number, maxTokens?: number, signal?: AbortSignal}} options - call shape.
+ * @param {{system?: string, messages: object[], temperature?: number, maxTokens?: number, signal?: AbortSignal, onUsage?: (usage: object) => void}} options - call shape.
  * @returns {Promise<string>} the concatenated text blocks.
  */
 export async function completeText(ctx, options) {
@@ -111,6 +111,10 @@ export async function completeText(ctx, options) {
         if (chunk.block?.type === 'text' && !parts.has(chunk.index)) parts.set(chunk.index, chunk.block.text)
       } else if (chunk.type === 'finish') {
         finish = chunk.reason
+      } else if (chunk.type === 'usage') {
+        // The provider reports what the call cost. The panel adds these up per
+        // batch, so the librarian can see what a run spends.
+        options.onUsage?.(chunk.usage)
       }
     }
   } catch (error) {
@@ -249,8 +253,8 @@ export function backoffDelay(attempt, retryAfterMs, random = Math.random) {
  * recoverable failures (empty text, truncated JSON) still split the batch in
  * half, because a smaller batch is what makes those succeed.
  * @param {object} ctx - plugin context.
- * @param {object[]} books - the batch (already prefilted).
- * @param {{signal?: AbortSignal, gate?: {block: (ms: number) => void, wait: (signal?: AbortSignal) => Promise<void>}, attempt?: number}} options - cancellation, shared cooldown gate, retry count.
+ * @param {object[]} books - the batch.
+ * @param {{signal?: AbortSignal, onStage?: (stage: string, info?: object) => void, onUsage?: (usage: object) => void}} options - cancellation, stage notice, usage sink.
  * @returns {Promise<{passed: object[], rejected: object[], review: object[]}>} decoded lists.
  */
 export async function screenBatch(ctx, books, options = {}) {
@@ -262,6 +266,7 @@ export async function screenBatch(ctx, books, options = {}) {
       if (attempt >= RATE_LIMIT_MAX_RETRIES) throw error
       const delay = backoffDelay(attempt, error.retryAfterMs)
       // Tell the shared gate so sibling workers stop hammering the provider too.
+      options.onStage?.('cooling', { attempt: attempt + 1, delayMs: delay })
       options.gate?.block(delay)
       await options.gate?.wait(options.signal)
       return screenBatch(ctx, books, { ...options, attempt: attempt + 1 })
@@ -270,6 +275,7 @@ export async function screenBatch(ctx, books, options = {}) {
     const recoverable = /没有返回任何文本|JSON|没有找到|解析/.test(String(error?.message ?? ''))
     if (!recoverable || books.length <= 1 || depth >= 3) throw error
     const half = Math.ceil(books.length / 2)
+    options.onStage?.('splitting', { depth: depth + 1, left: half, right: books.length - half })
     const next = { ...options, depth: depth + 1, attempt: 0 }
     const [left, right] = await Promise.all([
       screenBatch(ctx, books.slice(0, half), next),
@@ -288,17 +294,20 @@ export async function screenBatch(ctx, books, options = {}) {
  * can retry halves without duplicating the call shape.
  * @param {object} ctx - plugin context.
  * @param {object[]} books - the batch.
- * @param {{signal?: AbortSignal}} options - cancellation.
+ * @param {{signal?: AbortSignal, onStage?: (stage: string, info?: object) => void, onUsage?: (usage: object) => void}} options - cancellation, stage notice, usage sink.
  * @returns {Promise<{passed: object[], rejected: object[], review: object[]}>} verdicts.
  */
 async function screenOnce(ctx, books, options) {
+  options.onStage?.('calling', { books: books.length })
   const text = await completeText(ctx, {
     system: AI_RULES,
     messages: [{ role: 'user', content: [{ type: 'text', text: buildScreeningMessage(books) }] }],
     temperature: 0,
     maxTokens: SCREEN_MAX_TOKENS,
     signal: options.signal,
+    onUsage: options.onUsage,
   })
+  options.onStage?.('parsing', { books: books.length })
   return parseScreeningJson(text)
 }
 

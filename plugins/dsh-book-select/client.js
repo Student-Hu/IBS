@@ -58,6 +58,31 @@ window.__ModuleLoader__.load({
       retryFailed: '重试失败书目',
       phaseRetry: '重试失败',
       batches: '批',
+      batchMonitor: '批次监控',
+      batchMonitorHint: '每批在做什么、耗时多久、花了多少 token',
+      runningBatches: '{count} 批在跑',
+      batchNoLabel: '批',
+      stageCalling: '调用模型中',
+      stageParsing: '解析返回',
+      stageCooling: '限流退避 {seconds} 秒后重试',
+      stageSplitting: '拆批重试',
+      stageApplying: '写回判定',
+      elapsedLabel: '已耗时',
+      avgPerBatch: '平均 {seconds} 秒/批',
+      slowestBatch: '最慢 {no} 批 {seconds} 秒',
+      finishedBatches: '已完成 {count} 批',
+      noBatchRecords: '还没有批次记录',
+      showAllBatches: '展开全部 {count} 批',
+      showFewerBatches: '只看最近 {count} 批',
+      tokenTitle: '本轮 token',
+      tokenIn: '输入',
+      tokenOut: '输出',
+      tokenTotal: '合计',
+      tokenPerBook: '平均 {value}/本',
+      tokenFixedPrompt: '每批固定规则提示 ≈ {value} 输入',
+      batchDone: '完成',
+      batchFailed: '失败',
+      batchCancelled: '已取消',
       statTotal: '总书目',
       statPassed: '通过',
       statRejected: '排除',
@@ -169,6 +194,31 @@ window.__ModuleLoader__.load({
       retryFailed: 'Retry failed',
       phaseRetry: 'retrying failures',
       batches: 'batches',
+      batchMonitor: 'Batch monitor',
+      batchMonitorHint: 'What each batch is doing, how long it took, what it cost',
+      runningBatches: '{count} running',
+      batchNoLabel: 'Batch',
+      stageCalling: 'Calling model',
+      stageParsing: 'Parsing reply',
+      stageCooling: 'Rate limited, retrying in {seconds}s',
+      stageSplitting: 'Splitting batch',
+      stageApplying: 'Applying verdicts',
+      elapsedLabel: 'Elapsed',
+      avgPerBatch: '{seconds}s per batch on average',
+      slowestBatch: 'slowest batch {no}: {seconds}s',
+      finishedBatches: '{count} batches done',
+      noBatchRecords: 'No batches yet',
+      showAllBatches: 'Show all {count} batches',
+      showFewerBatches: 'Show only the last {count}',
+      tokenTitle: 'Tokens this run',
+      tokenIn: 'in',
+      tokenOut: 'out',
+      tokenTotal: 'total',
+      tokenPerBook: '{value} per book',
+      tokenFixedPrompt: 'fixed prompt ≈ {value} per batch',
+      batchDone: 'done',
+      batchFailed: 'failed',
+      batchCancelled: 'cancelled',
       statTotal: 'Total',
       statPassed: 'Passed',
       statRejected: 'Rejected',
@@ -344,6 +394,23 @@ window.__ModuleLoader__.load({
       .bsx-msg.assistant.error { color: var(--dsw-alias-state-error-primary); }
       .bsx-sugg { display:flex; gap:6px; flex-wrap:wrap; }
       .bsx-spacer { flex:1; }
+      .bsx-monitor { display:flex; flex-direction:column; gap:8px; padding:8px 10px; border:1px solid var(--dsw-alias-border-l2); border-radius:10px; background: var(--dsw-alias-bg-layer-1); flex:none; }
+      .bsx-monitor-head { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+      .bsx-monitor-meta { color: var(--bsx-faint); font-size:11.5px; font-variant-numeric:tabular-nums; }
+      .bsx-monitor-empty { color: var(--bsx-faint); font-size:12px; padding:4px 2px; }
+      .bsx-token-bar { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:6px 9px; border-radius:8px; background: var(--dsw-alias-bg-layer-2); }
+      .bsx-token-item { display:inline-flex; align-items:baseline; gap:5px; color: var(--bsx-faint); font-size:11.5px; }
+      .bsx-token-value { color: var(--dsw-alias-label-primary); font-weight:600; font-variant-numeric:tabular-nums; }
+      .bsx-lane { display:grid; grid-template-columns:58px 52px minmax(100px,1fr) 148px 72px 92px; gap:10px; align-items:center; padding:4px 8px; border-radius:8px; font-size:12px; }
+      .bsx-lane.running { background: var(--bsx-accent-soft); }
+      .bsx-lane-no { color: var(--bsx-faint); font-size:11.5px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+      .bsx-lane-titles { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .bsx-lane-stage { color: var(--dsw-alias-label-secondary); font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .bsx-lane-time { color: var(--bsx-faint); font-size:11.5px; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+      .bsx-lane.done .bsx-lane-stage { color: var(--dsw-alias-state-success-primary); }
+      .bsx-lane.failed .bsx-lane-stage { color: var(--dsw-alias-state-error-primary); }
+      .bsx-lane.cancelled .bsx-lane-stage { color: var(--bsx-faint); }
+      .bsx-done-list { max-height:220px; overflow:auto; }
     `
 
     /** Client locale service, captured in apply() before the view mounts. */
@@ -495,8 +562,14 @@ window.__ModuleLoader__.load({
       const [historyOpen, setHistoryOpen] = React.useState(false)
       const [historyEntries, setHistoryEntries] = React.useState([])
       const [historyBusy, setHistoryBusy] = React.useState('')
+      // The batch monitor: folded away by default, opened once per run.
+      const [monitorOpen, setMonitorOpen] = React.useState(false)
+      const [monitorTouched, setMonitorTouched] = React.useState(false)
+      const [showAllBatches, setShowAllBatches] = React.useState(false)
+      const [now, setNow] = React.useState(() => Date.now())
       const [, setLocaleRevision] = React.useState(0)
       const fileRef = React.useRef(null)
+      const seenJobId = React.useRef(null)
 
       /** Toggle the summary row of one book. */
       const toggleDetail = (id) => setExpanded((previous) => ({ ...previous, [id]: previous[id] !== true }))
@@ -581,6 +654,24 @@ window.__ModuleLoader__.load({
           clearInterval(timer)
         }
       }, [jobId, jobRunning, totalBooks, sessionId, applySnapshot])
+
+      // A fresh run opens the batch monitor once. After the librarian folds it
+      // away it stays folded — the panel is a glance, not a permanent fixture.
+      React.useEffect(() => {
+        if (jobId === undefined || jobId === null) return
+        if (seenJobId.current === jobId) return
+        seenJobId.current = jobId
+        setShowAllBatches(false)
+        if (!monitorTouched) setMonitorOpen(true)
+      }, [jobId, monitorTouched])
+
+      // Elapsed times tick locally, so the running lanes keep moving between
+      // the host's polls.
+      React.useEffect(() => {
+        if (!jobRunning) return undefined
+        const timer = setInterval(() => setNow(Date.now()), 1_000)
+        return () => clearInterval(timer)
+      }, [jobRunning])
 
       // Cheap revision watcher: a run may also be started from the agent tool,
       // in which case the panel only learns about it here.
@@ -805,6 +896,140 @@ window.__ModuleLoader__.load({
       const job = summary?.job
       const percent = job !== null && job !== undefined && job.total > 0 ? Math.round((job.done / job.total) * 100) : 0
 
+      // Batch report: what every batch is doing, how long it took, what it
+      // cost. The host sends the whole log with every poll, so this is a pure
+      // projection of `job.batchLog`.
+      const batchLog = Array.isArray(job?.batchLog) ? job.batchLog : []
+      const runningBatches = batchLog.filter((entry) => entry.status === 'running')
+      const finishedBatches = batchLog
+        .filter((entry) => entry.status !== 'running')
+        .slice()
+        .sort((a, b) => String(b.endedAt ?? '').localeCompare(String(a.endedAt ?? '')))
+      const shownFinished = showAllBatches ? finishedBatches : finishedBatches.slice(0, 10)
+
+      /** Milliseconds as a short seconds string. */
+      const formatSeconds = (ms) => {
+        const value = Number(ms)
+        if (!Number.isFinite(value) || value < 0) return '—'
+        return (value / 1000).toFixed(value < 10_000 ? 1 : 0)
+      }
+
+      /** Token counts, abbreviated once they reach a thousand. */
+      const formatTokens = (value) => {
+        const number = Number(value ?? 0)
+        if (!Number.isFinite(number) || number <= 0) return '0'
+        if (number >= 1000) return `${(number / 1000).toFixed(number >= 10000 ? 0 : 1)}k`
+        return String(Math.round(number))
+      }
+
+      /** The stage line of one batch. */
+      const stageLabel = (entry) => {
+        const stage = entry?.stage
+        if (stage === 'cooling') {
+          const seconds = Math.max(1, Math.round(Number(entry?.stageInfo?.delayMs ?? 0) / 1000))
+          return t('stageCooling', { seconds })
+        }
+        if (stage === 'splitting') return t('stageSplitting')
+        if (stage === 'parsing') return t('stageParsing')
+        if (stage === 'applying') return t('stageApplying')
+        return t('stageCalling')
+      }
+
+      /** One row of the batch monitor. */
+      const batchLane = (entry) => {
+        const started = new Date(entry.startedAt ?? 0).getTime()
+        const elapsed = entry.status === 'running'
+          ? Math.max(0, now - (Number.isFinite(started) ? started : now))
+          : Number(entry.elapsedMs ?? 0)
+        const stage = entry.status === 'done'
+          ? t('batchDone')
+          : entry.status === 'failed'
+            ? t('batchFailed')
+            : entry.status === 'cancelled'
+              ? t('batchCancelled')
+              : stageLabel(entry)
+        const titles = Array.isArray(entry.titles) ? entry.titles.join('、') : ''
+        const tokens = entry.usage === null || entry.usage === undefined
+          ? ''
+          : `${formatTokens(entry.usage.inputTokens)} / ${formatTokens(entry.usage.outputTokens)}`
+        return h('div', { className: `bsx-lane ${entry.status}`, key: `lane-${entry.no}` },
+          h('div', { className: 'bsx-lane-no' }, `${t('batchNoLabel')} ${entry.no}`),
+          h('div', { className: 'bsx-lane-no' }, `${entry.bookCount} ${t('booksUnit')}`),
+          h('div', { className: 'bsx-lane-titles', title: titles }, titles),
+          h('div', { className: 'bsx-lane-stage', title: stage }, stage),
+          h('div', { className: 'bsx-lane-time' }, `${formatSeconds(elapsed)}s`),
+          h('div', { className: 'bsx-lane-time' }, tokens),
+        )
+      }
+
+      const elapsedValues = finishedBatches.map((entry) => Number(entry.elapsedMs ?? 0)).filter((value) => value > 0)
+      const avgMs = elapsedValues.length === 0
+        ? 0
+        : elapsedValues.reduce((sum, value) => sum + value, 0) / elapsedValues.length
+      const slowest = elapsedValues.length === 0
+        ? null
+        : finishedBatches.reduce((slow, entry) => (
+          Number(entry.elapsedMs ?? 0) > Number(slow.elapsedMs ?? 0) ? entry : slow
+        ), finishedBatches[0])
+      const jobStart = new Date(job?.startedAt ?? 0).getTime()
+      const jobEnd = job?.finishedAt === null || job?.finishedAt === undefined
+        ? now
+        : new Date(job.finishedAt).getTime()
+      const runElapsed = Number.isFinite(jobStart) && Number.isFinite(jobEnd) ? Math.max(0, jobEnd - jobStart) : 0
+
+      const usage = job?.usage ?? null
+      const tokenInput = Number(usage?.inputTokens ?? 0)
+      const tokenOutput = Number(usage?.outputTokens ?? 0)
+      const tokenTotal = Number(usage?.totalTokens ?? 0) || tokenInput + tokenOutput
+      const booksJudged = Number(job?.total ?? 0)
+      const perBook = booksJudged > 0 ? tokenTotal / booksJudged : 0
+      // The rule prompt is sent again with every batch, so the smallest input
+      // count of the run is roughly that fixed cost.
+      const inputSamples = batchLog.map((entry) => Number(entry?.usage?.inputTokens ?? 0)).filter((value) => value > 0)
+      const fixedPrompt = inputSamples.length >= 2 ? Math.min(...inputSamples) : null
+
+      const monitorButton = h('button', {
+        className: `bsx-btn small${monitorOpen ? ' primary' : ''}`,
+        type: 'button',
+        onClick: () => {
+          setMonitorTouched(true)
+          setMonitorOpen((open) => !open)
+        },
+      }, t('batchMonitor'))
+
+      const monitorBody = h('div', { className: 'bsx-monitor', key: 'monitor' },
+        h('div', { className: 'bsx-monitor-head' },
+          h('div', { className: 'bsx-monitor-meta' }, `${t('elapsedLabel')} ${formatSeconds(runElapsed)}s`),
+          avgMs > 0 ? h('div', { className: 'bsx-monitor-meta' }, t('avgPerBatch', { seconds: formatSeconds(avgMs) })) : null,
+          slowest !== null ? h('div', { className: 'bsx-monitor-meta' }, t('slowestBatch', { no: slowest.no, seconds: formatSeconds(slowest.elapsedMs) })) : null,
+          h('div', { className: 'bsx-monitor-meta' }, t('finishedBatches', { count: finishedBatches.length })),
+        ),
+        tokenTotal > 0
+          ? h('div', { className: 'bsx-token-bar' },
+            h('div', { className: 'bsx-token-item' }, `${t('tokenTitle')} `, h('span', { className: 'bsx-token-value' }, formatTokens(tokenTotal))),
+            h('div', { className: 'bsx-token-item' }, `${t('tokenIn')} `, h('span', { className: 'bsx-token-value' }, formatTokens(tokenInput))),
+            h('div', { className: 'bsx-token-item' }, `${t('tokenOut')} `, h('span', { className: 'bsx-token-value' }, formatTokens(tokenOutput))),
+            perBook > 0 ? h('div', { className: 'bsx-token-item' }, t('tokenPerBook', { value: formatTokens(perBook) })) : null,
+            fixedPrompt !== null ? h('div', { className: 'bsx-token-item' }, t('tokenFixedPrompt', { value: formatTokens(fixedPrompt) })) : null,
+          )
+          : null,
+        runningBatches.length > 0 ? h('div', {}, runningBatches.map(batchLane)) : null,
+        batchLog.length === 0 ? h('div', { className: 'bsx-monitor-empty' }, t('noBatchRecords')) : null,
+        finishedBatches.length > 0
+          ? h('div', { className: 'bsx-done-list' },
+            shownFinished.map(batchLane),
+            finishedBatches.length > 10
+              ? h('button', {
+                className: 'bsx-btn small',
+                type: 'button',
+                style: { marginTop: '6px' },
+                onClick: () => setShowAllBatches((value) => !value),
+              }, showAllBatches ? t('showFewerBatches', { count: 10 }) : t('showAllBatches', { count: finishedBatches.length }))
+              : null,
+          )
+          : null,
+      )
+
       const statCard = (key, value, tone) => h('div', { className: 'bsx-stat', key },
         h('div', { className: 'bsx-stat-label' }, h('span', { className: `bsx-dot ${tone}` }), t(key)),
         h('div', { className: 'bsx-stat-value' }, String(value)),
@@ -860,6 +1085,12 @@ window.__ModuleLoader__.load({
             h('span', { className: 'bsx-hint', style: { whiteSpace: 'nowrap' } },
               `${job.phase === 'retry' ? `${t('phaseRetry')} · ` : ''}${job.done}/${job.total} · ${job.batchesDone}/${job.batches} ${t('batches')}${typeof job.concurrency === 'number' ? ` · ${t('concurrency')} ${job.concurrency}` : ''}${job.failed > 0 ? ` · ${t('failed')} ${job.failed}` : ''}`),
           ),
+        batchLog.length > 0
+          ? h('span', { className: 'bsx-badge' }, runningBatches.length > 0
+            ? t('runningBatches', { count: runningBatches.length })
+            : t('finishedBatches', { count: finishedBatches.length }))
+          : null,
+        monitorButton,
         h('span', { className: 'bsx-hint', style: { marginLeft: 'auto', whiteSpace: 'nowrap' } }, `${t('model')}: ${summary?.model ?? '—'}`),
       )
 
@@ -1044,6 +1275,7 @@ window.__ModuleLoader__.load({
       // zero, controls disabled, and the picker inside the empty table.
       const dataPanel = h('div', { key: 'data', style: { display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0 } },
         runBar,
+        monitorOpen ? monitorBody : null,
         toolbar,
         table,
       )

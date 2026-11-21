@@ -140,6 +140,29 @@ function clampConcurrency(value) {
   return Math.min(CONCURRENCY_MAX, Math.max(CONCURRENCY_MIN, count))
 }
 
+/** Token fields the panel adds up; anything else is ignored. */
+const USAGE_FIELDS = ['inputTokens', 'outputTokens', 'totalTokens', 'cacheReadTokens', 'cacheWriteTokens', 'reasoningTokens']
+
+/**
+ * Add one provider usage report to a running total.
+ *
+ * The `llm` service reports usage per call, so a batch that was split or
+ * retried contributes several reports; the panel wants one number per batch
+ * and one for the whole run.
+ * @param {object|null} target - the total so far.
+ * @param {object} usage - one usage report.
+ * @returns {object|null} the new total.
+ */
+function addUsage(target, usage) {
+  if (usage === null || usage === undefined || typeof usage !== 'object') return target
+  const total = target === null || target === undefined ? {} : { ...target }
+  for (const field of USAGE_FIELDS) {
+    const value = usage[field]
+    if (typeof value === 'number' && Number.isFinite(value)) total[field] = (total[field] ?? 0) + value
+  }
+  return total
+}
+
 /** New history id: ISO time first so the directory sorts chronologically. */
 function newHistoryId() {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
@@ -481,6 +504,9 @@ export function apply(ctx) {
       { key: 'pending', books: pending },
       { key: 'retry', books: retries },
     ].filter((phase) => phase.books.length > 0)
+    // Batch numbers are handed out across both phases, so the report reads
+    // "batch 7" instead of restarting the count after the retry phase.
+    let batchBase = 0
     const total = pending.length + retries.length
     const job = {
       id: `job-${Date.now().toString(36)}`,
@@ -498,6 +524,11 @@ export function apply(ctx) {
       finishedAt: null,
       error: null,
       cancelled: false,
+      // Per-batch progress report: what each batch is doing, how long it took
+      // and what it cost in tokens. Travels with `job`, so it lands in the
+      // history archive as well.
+      batchLog: [],
+      usage: null,
     }
     state.job = job
     state.lastError = null
@@ -507,27 +538,80 @@ export function apply(ctx) {
         for (const phase of phases) {
           job.phase = phase.key
           const batches = splitBatches(phase.books, size)
-          const pool = await runPool(batches, concurrency, async (batch) => {
+          // Batch numbers run across both phases, so the panel can say "batch 7"
+          // without the reader having to know which phase it belonged to.
+          const base = batchBase
+          batchBase += batches.length
+          const pool = await runPool(batches, concurrency, async (batch, index) => {
+            const record = {
+              no: base + index + 1,
+              phase: phase.key,
+              bookCount: batch.length,
+              titles: batch.slice(0, 2).map((book) => String(book.title ?? '')),
+              status: 'running',
+              stage: 'calling',
+              stageInfo: null,
+              startedAt: new Date().toISOString(),
+              endedAt: null,
+              elapsedMs: null,
+              retry: 0,
+              split: 0,
+              counts: null,
+              usage: null,
+              error: null,
+            }
+            job.batchLog.push(record)
+            const startedAt = Date.now()
             try {
-              const outcome = await screenBatch(ctx, batch, { signal: controller.signal, gate })
+              const outcome = await screenBatch(ctx, batch, {
+                signal: controller.signal,
+                gate,
+                onStage: (stage, info) => {
+                  record.stage = stage
+                  record.stageInfo = info ?? null
+                  if (stage === 'cooling') record.retry += 1
+                  if (stage === 'splitting') record.split += 1
+                  state.revision++
+                },
+                onUsage: (usage) => {
+                  record.usage = addUsage(record.usage, usage)
+                  job.usage = addUsage(job.usage, usage)
+                  state.revision++
+                },
+              })
+              record.stage = 'applying'
               applyOutcome(batch, outcome)
+              record.status = 'done'
+              record.counts = {
+                passed: outcome.passed.length,
+                rejected: outcome.rejected.length,
+                review: outcome.review.length,
+              }
             } catch (error) {
               if (controller.signal.aborted) {
                 // Cancelled mid-flight: leave the batch pending so the next run
                 // picks it up — a cancelled run is not a failed batch.
                 job.cancelled = true
+                record.status = 'cancelled'
+                record.endedAt = new Date().toISOString()
+                record.elapsedMs = Date.now() - startedAt
+                state.revision++
                 return
               }
               // A model/transport error is not a verdict: park the batch in its
               // own bucket so the librarian can retry it instead of reviewing it.
               job.failed += batch.length
               const reason = error?.message ?? String(error)
+              record.status = 'failed'
+              record.error = reason
               for (const book of batch) {
                 book.status = 'failed'
                 book.source = 'ai'
                 book.reason = `AI 判定失败：${reason}`
               }
             }
+            record.endedAt = new Date().toISOString()
+            record.elapsedMs = Date.now() - startedAt
             job.done += batch.length
             job.batchesDone++
             state.revision++
