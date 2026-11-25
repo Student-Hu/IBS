@@ -4,14 +4,14 @@
 
 ## 安装
 
-前置条件：Node.js ≥ 20，DeepSeek Harness（DSH）≥ 0.2.0（`package.json` 的 `engines.dsh` 已声明；版本不匹配时 DSH 会拒绝安装，可用 `dsh plugin --profile <profile> allow-version dsh-book-select@0.1.7 --dsh-version <你的版本> --accept-risk` 放行）。插件本体零第三方运行时依赖，只需把本包装进你的 DSH profile。
+前置条件：Node.js ≥ 20，DeepSeek Harness（DSH）≥ 0.2.0（`package.json` 的 `engines.dsh` 已声明；版本不匹配时 DSH 会拒绝安装，可用 `dsh plugin --profile <profile> allow-version dsh-book-select@0.1.8 --dsh-version <你的版本> --accept-risk` 放行）。插件本体零第三方运行时依赖，只需把本包装进你的 DSH profile。
 
 **方式一：安装 tarball（推荐给别人）**
 
-下载 `dsh-book-select-0.1.7.tgz` 后：
+下载 `dsh-book-select-0.1.8.tgz` 后：
 
 ```bash
-dsh plugin --profile <你的 profile> add <绝对路径>/dsh-book-select-0.1.7.tgz
+dsh plugin --profile <你的 profile> add <绝对路径>/dsh-book-select-0.1.8.tgz
 ```
 
 也可以在 GUI 的「插件」面板里，把 tarball 的**绝对路径**填进安装框。DSH 会把它按 `pnpm add file:...` 装进 profile，自动把本包追加进 `dsh.profile.bundles` 并加载它的 `cordis.patch.yml`——不需要手改 profile 的 patch 文件。装完重启 DSH，浏览器硬刷新（Ctrl+Shift+R）。
@@ -46,6 +46,7 @@ dsh plugin --profile <你的 profile> add github:<你的账号>/<仓库>
 4. 看结果：顶部一行统计（总数/通过/排除/待复审/待判定/失败）、一行工具条（状态筛选 + 搜索 + 导出）；书目表占满剩余高度，表头冻结、行内滚动，书名默认两行截断（点书名展开内容简介、ISBN、版次与预筛提示）；**判定依据 / 改判内容是完整显示的**，长文本自动换行、保留原有断行，不再两行截断。每行的下拉框可人工改判（`source` 变成“人工”，统计同步）。表格**分页显示**（默认每页 50 条，可选 20/50/100/200）：底部有「首页 / 上一页 / 页码 / 下一页 / 末页」与每页条数选择，当前页高亮；切换筛选、搜索或导入新清单会自动回到第 1 页。导出始终包含全部匹配记录，不受分页影响。
 5. **批注**：表格最后一列是「批注」，写你自己的判断（这本的作者对路、可以留着、封面要重做……）。点格子直接输入，失焦或 Ctrl+Enter 保存；批注**不影响判定结果**，只跟着这本书走——随清单存进历史存档，导出时作为最后一列带出去，搜索框也能搜到批注内容。
 6. 「导出 CSV」按**当前视图**导出——顶部状态标签选哪个就导出哪一批（选「全部」导出全部，选「通过」导出通过的，选「失败」导出失败的），搜索框里有关键词时也只导出命中的那些；按钮旁会写明这次导出的是什么，例如「导出 通过 5 本（搜索「教材」命中）」。文件带 BOM，Excel 直接打开不乱码；文件名带 `-all-` / `-passed-` / `-failed-` 等当前标签名便于区分。导出保留导入时的**全部原始列**（列名、列序、单元格原值都不动，例如 `重复`/`载体`/`预订套数`/`读者对象`/`主题`/`订购号` 这些规则用不到的列也在），只在末尾追加五列：`状态`、`判定依据 / 改判`、`判定来源`（硬规则/大模型/人工）、`敏感词提示`、`批注`。
+7. 「导出 Excel」导出**同一个视图**的 `.xlsx` 真 Excel 文件（不是改名的 CSV）：表头加粗冻结、首行带筛选器、列宽按内容估算、价格等数字写成数值而不是文本，可以直接排序和筛选，也能再导入回来。表格内容与「导出 CSV」完全一致。
 7. 「历史」按钮：每次导入会存一份清单，之后每判完一批都会就地更新同一份存档（含尚未判完的书），所以中途停掉也不会丢已经判出的结果。点「历史」列出全部存档（文件名、更新时间、总数与各状态的个数），点「载入」把那一份连同判定结果一起恢复到工作台，点「删除」从磁盘移除。最多保留 40 份，旧的自动清理。
 8. 「规则说明」页列出全部硬规则（含本次命中数）、九类分类号规则、内容排除规则、I 类出版社白名单与敏感关键词，以及模型的输出契约。
 9. 「设计问答」页可以问规则与实现的任何细节（为什么阈值是 500 元、批大小怎么选、再加一条规则要改哪里……）。回答只依据规则原文与本文档所述实现，规则没写到的地方会直说未覆盖。
@@ -74,7 +75,7 @@ token 数字来自模型调用返回的 usage 块（DSH 的 llm 流在 `finish` 
 | 结果解析 | `解析AI结果1.js`（去换行 → `JSON.parse`） | `parseScreeningJson()`：去围栏、截取 `{}`、尾逗号与全角引号兜底 |
 | 状态回写 | data table 的 `status/reason` 列 | 内存状态 + 状态机 `pending/passed/rejected/review/failed`，人工改判为最终口径 |
 | 分批 | 50 本/批 | 5–40 本/批（默认 15），并发 1–6 批（默认 3）；单批调用失败进「失败」桶，待判定清空后再整批重试；限流时退避重试同一批 |
-| 输出 | 三个 xlsx | 按筛选导出 CSV（浏览器侧生成，Host 无写盘权限） |
+| 输出 | 三个 xlsx | 按筛选导出 CSV 或 `.xlsx`（CSV 在浏览器侧生成；`.xlsx` 由 Host 用 `lib/xlsx.js` 打包成真 Excel 文件，浏览器只负责下载） |
 
 有意的差异：
 
@@ -103,10 +104,12 @@ lib/rules.js        规则常量 + 预过滤实现 + 给模型的 system prompt
 lib/parse.js        xlsx / CSV / TSV / JSON 解析与字段归一化
 lib/screening.js    模型调用（llm.stream 聚合成文本、接住 usage 块、阶段回调）、输出解析、设计问答
 lib/scheduler.js    批次池（有界并发）、共享冷却闸（限流时让所有 worker 一起等）
+lib/xlsx.js         .xlsx 写出（ZIP 容器 + OOXML：表头加粗冻结、行内字符串、数字单元格、列宽）
 locale/*.json       插件卡片标题与描述（中英）
 ```
 
 - **宿主与浏览器怎么通信**：Host 半边在 `/book-select/api` 挂一个 prefix 路由，只接受 POST，先用 `connection.requestRejection` 做同源检查，再按路径尾段分派到 `operations` 表。UI 用同源 `fetch` 调同一张表，所以界面与工具的行为不会分叉。
+- **导出**：CSV 在浏览器侧拼好下载（带 BOM，Excel 不乱码）；`.xlsx` 由浏览器把当前视图的表头与行交给 Host 的 `exportXlsx`，Host 用 `lib/xlsx.js` 打包成 ZIP + OOXML 的真 Excel 文件（表头加粗冻结、首行筛选器、数字写成数值、列宽按内容估算），再把字节 base64 回传，浏览器下载。之所以绕这一圈：ZIP 容器要 CRC-32 与 deflate，只有 Host 侧有 zlib。
 - **模型调用**：走 `ctx.llm.stream()`，模型取 `agentDefaultModel.currentSelection()`（即当前会话选的模型），判定 `temperature: 0`、`maxTokens: 16000`（推理模型的思考也吃这份预算，太小会整批空返回，此时会按 `/没有返回任何文本|JSON/` 判定为可恢复错误并自动对半拆批重试，最多 3 层）；限流（失败码 `RATE_LIMIT`）不拆批，而是退避后重试同一批，最多 3 次；问答 `temperature: 0.2`、`maxTokens: 2600`，并限制默认 400 字以内以免被截断。`lib/screening.js` 还会把每次调用推来的 usage 块与当前阶段（调用/解析/退避/拆批）通过 `onUsage` / `onStage` 回调报给 Host，Host 据此写出批次报告。
 - **给 Agent 的工具**：`book_select`，参数与 HTTP 接口一一对应（`action` 取 `status/import/sample/run/cancel/results/set_status/set_note/rules/history/load_history/delete_history/ask/reset`）。默认操作与侧边栏面板同一个清单（键 `workbench`），所以“帮我把这份书单筛一遍”这类话，Agent 直接调工具即可，界面上会看到同一份结果。
 - **状态放哪**：当前工作清单在 Host 进程内存里，按清单键（UI 固定 `workbench`）存。存档另存为 JSON 文件：每份清单一个文件，放在 `$DSH_HOME/book-select/history/<id>.json`（默认 `C:\Users\<你>\.dsh\book-select\history`），导入时写一次、每批判定后再写一次、人工改判与批注也写，最多保留 40 份。插件重载会丢掉内存里的当前清单，但历史存档还在，点「历史」载入即可继续。

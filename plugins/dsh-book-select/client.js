@@ -92,6 +92,9 @@ window.__ModuleLoader__.load({
       filterAll: '全部',
       search: '搜索书名、出版社、分类号或判定依据',
       export: '导出 CSV',
+      exportXlsx: '导出 Excel',
+      exportXlsxBusy: '正在生成…',
+      exportSheet: '选书结果',
       exportHint: '导出 {scope} {count} 本',
       exportHintSearch: '（搜索「{query}」命中）',
       scopeAllBooks: '全部书目',
@@ -230,6 +233,9 @@ window.__ModuleLoader__.load({
       filterAll: 'All',
       search: 'Search title, publisher, classification or evidence',
       export: 'Export CSV',
+      exportXlsx: 'Export Excel',
+      exportXlsxBusy: 'Building…',
+      exportSheet: 'Book selection',
       exportHint: 'Export {count} × {scope}',
       exportHintSearch: '(matches "{query}")',
       scopeAllBooks: 'all books',
@@ -459,12 +465,8 @@ window.__ModuleLoader__.load({
       return data.value
     }
 
-    /** Compose the CSV the browser downloads (UTF-8 BOM so Excel opens it). */
-    function downloadCsv(rows, filename) {
-      const text = rows
-        .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
-        .join('\r\n')
-      const blob = new Blob([`\uFEFF${text}`], { type: 'text/csv;charset=utf-8' })
+    /** Hand a generated file to the browser as a download. */
+    function downloadBlob(blob, filename) {
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
       anchor.href = url
@@ -473,6 +475,15 @@ window.__ModuleLoader__.load({
       anchor.click()
       anchor.remove()
       setTimeout(() => URL.revokeObjectURL(url), 2_000)
+    }
+
+    /** Compose the CSV the browser downloads (UTF-8 BOM so Excel opens it). */
+    function downloadCsv(rows, filename) {
+      const text = rows
+        .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+        .join('\r\n')
+      const blob = new Blob([`\uFEFF${text}`], { type: 'text/csv;charset=utf-8' })
+      downloadBlob(blob, filename)
     }
 
     /** Read a picked file into `{text}` (delimiter tables) or `{base64}` (xlsx). */
@@ -569,6 +580,7 @@ window.__ModuleLoader__.load({
       const [query, setQuery] = React.useState('')
       const [busy, setBusy] = React.useState('')
       const [error, setError] = React.useState('')
+      const [exporting, setExporting] = React.useState(false)
       const [messages, setMessages] = React.useState([])
       const [question, setQuestion] = React.useState('')
       const [batchSize, setBatchSize] = React.useState(15)
@@ -862,14 +874,14 @@ window.__ModuleLoader__.load({
       }
 
       /**
-       * Export the rows in the shape they were imported: every source column,
-       * in its original order and with its original header, followed by the
-       * columns the workbench adds. Records without preserved cells (for
-       * example a manually edited state) fall back to the canonical fields.
-       * The export follows the current view: the status tab and the search
-       * box decide which books are written out.
+       * The table the export writes: every source column, in its original
+       * order and with its original header, followed by the columns the
+       * workbench adds. Records without preserved cells (for example a
+       * manually edited state) fall back to the canonical fields. The export
+       * follows the current view: the status tab and the search box decide
+       * which books are written out.
        */
-      const doExport = () => {
+      const buildExportTable = () => {
         const sourceColumns = Array.isArray(summary?.columns) ? summary.columns : []
         const fallbackColumns = [
           t('colNo'), t('colTitle'), t('colPublisher'), t('colCls'), 'ISBN',
@@ -896,8 +908,38 @@ window.__ModuleLoader__.load({
           item.hint,
           item.note ?? '',
         ])
-        const scope = filter === 'all' ? 'all' : filter
+        return { header, rows, scope: filter === 'all' ? 'all' : filter }
+      }
+
+      /** Write the current view as a CSV file. */
+      const doExport = () => {
+        const { header, rows, scope } = buildExportTable()
         downloadCsv([header, ...rows], `book-selection-${scope}-${new Date().toISOString().slice(0, 10)}.csv`)
+      }
+
+      /**
+       * Write the current view as a real `.xlsx` file. The table travels to
+       * the Host, which packs it into a workbook (a ZIP container needs
+       * zlib); the browser only downloads the finished bytes.
+       */
+      const doExportXlsx = async () => {
+        const { header, rows, scope } = buildExportTable()
+        const filename = `book-selection-${scope}-${new Date().toISOString().slice(0, 10)}.xlsx`
+        setExporting(true)
+        try {
+          const result = await call('exportXlsx', { sessionId, sheetName: t('exportSheet'), filename, header, rows })
+          const binary = atob(String(result?.base64 ?? ''))
+          const bytes = new Uint8Array(binary.length)
+          for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
+          downloadBlob(
+            new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+            filename,
+          )
+        } catch (error) {
+          setError(error?.message ?? String(error))
+        } finally {
+          setExporting(false)
+        }
       }
 
       const ask = (prompt) => {
@@ -1157,6 +1199,13 @@ window.__ModuleLoader__.load({
           h('input', { className: 'bsx-input', value: query, placeholder: t('search'), onChange: (event) => setQuery(event.target.value) }),
           h('span', { className: 'bsx-hint', title: exportHintText }, exportHintText),
           h('button', { className: 'bsx-btn', type: 'button', title: exportHintText, disabled: visible.length === 0, onClick: doExport }, t('export')),
+          h('button', {
+            className: 'bsx-btn',
+            type: 'button',
+            title: exportHintText,
+            disabled: visible.length === 0 || exporting,
+            onClick: doExportXlsx,
+          }, exporting ? t('exportXlsxBusy') : t('exportXlsx')),
         ),
       )
 

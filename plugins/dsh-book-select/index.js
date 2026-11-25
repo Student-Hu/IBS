@@ -28,6 +28,7 @@ import {
 import { importBooks, sampleBooks } from './lib/parse.js'
 import { createCooldownGate, runPool, splitBatches } from './lib/scheduler.js'
 import { answerDesignQuestion, modelLabel, normalizeNo, screenBatch } from './lib/screening.js'
+import { buildXlsx } from './lib/xlsx.js'
 
 /** Loader identity (must equal the package name). */
 export const name = 'dsh-book-select'
@@ -54,6 +55,10 @@ const BATCH_DEFAULT = 15
 const CONCURRENCY_MIN = 1
 const CONCURRENCY_MAX = 6
 const CONCURRENCY_DEFAULT = 3
+
+/** Ceilings for one Excel export request, so a huge list cannot exhaust memory. */
+const EXPORT_MAX_ROWS = 20_000
+const EXPORT_MAX_COLUMNS = 200
 
 /**
  * Where finished lists are kept between restarts: one JSON file per import,
@@ -709,6 +714,34 @@ export function apply(ctx) {
     return summaryOf(state, ctx)
   }
 
+  /**
+   * Build a real `.xlsx` file from the table the browser shows. The browser
+   * owns the table (status tab, search box, column order and labels); the
+   * Host only encodes it, because a ZIP container needs zlib.
+   * @param {{sheetName?: string, filename?: string, header?: unknown[], rows?: unknown[][]}} payload - the table to write.
+   * @returns {{filename: string, base64: string}} the file name and its bytes, base64 encoded.
+   */
+  const doExportXlsx = (payload) => {
+    const header = Array.isArray(payload.header) ? payload.header : []
+    const rows = Array.isArray(payload.rows) ? payload.rows : []
+    if (header.length === 0) throw new RequestError(400, 'empty-table', '没有可导出的表头。')
+    if (header.length > EXPORT_MAX_COLUMNS) {
+      throw new RequestError(400, 'too-many-columns', `导出列数超过上限（${EXPORT_MAX_COLUMNS} 列）。`)
+    }
+    if (rows.length > EXPORT_MAX_ROWS) {
+      throw new RequestError(400, 'too-many-rows', `导出行数超过上限（${EXPORT_MAX_ROWS} 行）。`)
+    }
+    const bytes = buildXlsx({
+      sheetName: String(payload.sheetName ?? '选书结果'),
+      header,
+      rows,
+    })
+    return {
+      filename: String(payload.filename ?? 'book-selection.xlsx'),
+      base64: bytes.toString('base64'),
+    }
+  }
+
   /** Static rule documentation for the rules panel. */
   const ruleDigest = () => ({
     prefilter: PREFILTER_RULES,
@@ -747,6 +780,7 @@ export function apply(ctx) {
     results: (payload) => doResults(stateFor(payload.sessionId), payload),
     setStatus: (payload) => doSetStatus(stateFor(payload.sessionId), payload),
     setNote: (payload) => doSetNote(stateFor(payload.sessionId), payload),
+    exportXlsx: (payload) => doExportXlsx(payload),
     reset: (payload) => {
       const state = stateFor(payload.sessionId)
       state.abort?.abort(new Error('用户重置了会话'))

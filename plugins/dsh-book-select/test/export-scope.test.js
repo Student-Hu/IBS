@@ -18,7 +18,7 @@ test('the export writes exactly the rows the current view shows', () => {
 })
 
 test('the file name carries the current status tab', () => {
-  assert.ok(/const scope = filter === 'all' \? 'all' : filter/.test(source))
+  assert.ok(/scope: filter === 'all' \? 'all' : filter/.test(source))
   assert.ok(/book-selection-\$\{scope\}-/.test(source))
 })
 
