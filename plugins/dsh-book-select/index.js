@@ -54,7 +54,7 @@ const BATCH_DEFAULT = 15
 /** How many batches may be screened at the same time. */
 const CONCURRENCY_MIN = 1
 const CONCURRENCY_MAX = 6
-const CONCURRENCY_DEFAULT = 3
+const CONCURRENCY_DEFAULT = 6
 
 /** Ceilings for one Excel export request, so a huge list cannot exhaust memory. */
 const EXPORT_MAX_ROWS = 20_000
@@ -844,7 +844,7 @@ export function apply(ctx) {
    */
   const tool = {
     name: 'book_select',
-    description: 'Acquisition screening for the sidebar "选书 / Book Select" panel. The panel holds one shared book list for the whole app: import an acquisition list (pasted table text, CSV, TSV, JSON array, or base64 .xlsx), run the deterministic prefilter plus model screening, read the verdicts, or ask about the selection rules themselves. `run` starts a background job and returns immediately; poll `status` (or `results`) until `job.running` is false. A run only screens books still in `pending`, then retries books parked in `failed` (a model/transport error, not a verdict); it never re-judges a book that already has a verdict. `run` screens up to `concurrency` batches at once (1-6, default 3). Statuses are pending/passed/rejected/review/failed; `set_status` overrides one book manually; `set_note` stores the librarian\'s own remark on one book without changing its verdict.',
+    description: 'Acquisition screening for the sidebar "选书 / Book Select" panel. The panel holds one shared book list for the whole app: import an acquisition list (pasted table text, CSV, TSV, JSON array, or base64 .xlsx), run the deterministic prefilter plus model screening, read the verdicts, or ask about the selection rules themselves. `run` starts a background job and returns immediately; poll `status` (or `results`) until `job.running` is false. A run only screens books still in `pending`, then retries books parked in `failed` (a model/transport error, not a verdict); it never re-judges a book that already has a verdict. `run` screens up to `concurrency` batches at once (1-6, default 6). Statuses are pending/passed/rejected/review/failed; `set_status` overrides one book manually; `set_note` stores the librarian\'s own remark on one book without changing its verdict.',
     parameters: {
       type: 'object',
       additionalProperties: false,
@@ -863,7 +863,7 @@ export function apply(ctx) {
         query: { type: 'string', description: 'For results: substring filter over title/author/publisher/classification/reason/note.' },
         limit: { type: 'integer', description: 'For results: maximum rows to return (1-2000, default 500).' },
         batch_size: { type: 'integer', description: 'For run: books per model call (5-40, default 15).' },
-        concurrency: { type: 'integer', description: 'For run: how many batches to screen at once (1-6, default 3).' },
+        concurrency: { type: 'integer', description: 'For run: how many batches to screen at once (1-6, default 6).' },
         book_id: { type: 'string', description: 'For set_status / set_note: the book id from status/results.' },
         history_id: { type: 'string', description: 'For load_history / delete_history: the id from the history list.' },
         reason: { type: 'string', description: 'For set_status: optional evidence/reason to record.' },

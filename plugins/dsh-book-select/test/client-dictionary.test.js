@@ -53,5 +53,5 @@ test('every key the view asks for exists in both dictionaries', () => {
 
 test('the view sends the concurrency it picked', () => {
   assert.ok(/call\('run', \{ sessionId, batchSize, concurrency \}\)/.test(source))
-  assert.ok(/const \[concurrency, setConcurrency\] = React\.useState\(3\)/.test(source))
+  assert.ok(/const \[concurrency, setConcurrency\] = React\.useState\(6\)/.test(source))
 })

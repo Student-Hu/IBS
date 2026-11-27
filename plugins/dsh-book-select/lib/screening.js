@@ -336,14 +336,14 @@ function designBrief() {
 
 敏感词不在这里排除：命中 ${BANNED_KEYWORDS.length} 个敏感词之一的书会带一条“预筛提示”（keywordHintOf），随书交给模型按内容判断，提示词里明确要求忽略关键词本身。
 
-阶段二 · 模型语义判定（lib/screening.js 的 screenBatch）：待判定图书按批（默认 15 本，可调 5–40）发给默认模型，同一阶段内并发跑多批（默认 3，可调 1–6，见 lib/scheduler.js 的批次池）；system 提示词就是规则全文（lib/rules.js 的 AI_RULES，含分类号规则 A/B/D/G/I/J/K/F/H 与内容排除 1–12、15–26 条），要求只输出 {"passed":[],"rejected":[],"review":[]}。解析容错：去代码围栏、取首个 { 到末个 }、修尾逗号。每本输入书必须且只能落在一个数组里；模型漏判的书进入“待复审”。
+阶段二 · 模型语义判定（lib/screening.js 的 screenBatch）：待判定图书按批（默认 15 本，可调 5–40）发给默认模型，同一阶段内并发跑多批（默认 6，可调 1–6，见 lib/scheduler.js 的批次池）；system 提示词就是规则全文（lib/rules.js 的 AI_RULES，含分类号规则 A/B/D/G/I/J/K/F/H 与内容排除 1–12、15–26 条），要求只输出 {"passed":[],"rejected":[],"review":[]}。解析容错：去代码围栏、取首个 { 到末个 }、修尾逗号。每本输入书必须且只能落在一个数组里；模型漏判的书进入“待复审”。
 
 ## 状态机
 每本书 status ∈ pending / passed / rejected / review / failed，source ∈ rule / ai / manual。预过滤命中的直接 rejected+rule；模型返回的按列表落 passed/rejected/review+ai；模型调用失败的那一批整批 failed（原因写明失败信息），不阻塞后续批次；用户可在表格里直接改判（source 变 manual）。一次运行分两个阶段且阶段之间串行：先跑完 pending，再跑 failed 重试；再次运行只处理 pending（相当于工作流的断点续跑）。判定途中取消时，在途批次保持 pending，不算失败。
 
 ## 参数与可调点
 - 批大小 batchSize：默认 15，接口限制 5–40；越大越省调用次数，但更容易撞上输出截断。一批失败（空文本或 JSON 解析失败）时会自动对半拆开重试，最多拆 3 层；真正失败的那一批整批转 failed。
-- 并发度 concurrency：默认 3，接口限制 1–6；同一阶段内同时判定的批数。并发越高墙钟时间越短，但越容易撞 provider 限流。限流（失败码 RATE_LIMIT）时不拆批，退避 2/4/8 秒（优先用 provider 给的重试时间）后重试同一批，最多 3 次；仍失败才进 failed。退避期间共享冷却闸让其他 worker 一起等，避免继续撞限流。
+- 并发度 concurrency：默认 6，接口限制 1–6；同一阶段内同时判定的批数。并发越高墙钟时间越短，但越容易撞 provider 限流。限流（失败码 RATE_LIMIT）时不拆批，退避 2/4/8 秒（优先用 provider 给的重试时间）后重试同一批，最多 3 次；仍失败才进 failed。退避期间共享冷却闸让其他 worker 一起等，避免继续撞限流。
 - 阈值：页码 20、价格 500、I 类白名单（${I_CLASS_WHITELIST.length} 家）、关键词表（${BANNED_KEYWORDS.length} 个）都在 lib/rules.js 顶部常量里。
 - 规则文本：AI_RULES 是唯一来源，改它即改变判定口径；分类号规则见 CLASS_RULES，内容排除见 CONTENT_RULES（条号沿用原工作流：1–12、15–26）。
 - 模型：跟随 Harness 的默认模型（agentDefaultModel），temperature 固定 0，单次调用 240 秒超时。

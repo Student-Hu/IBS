@@ -100,14 +100,14 @@ async function runToCompletion(tool, args) {
   return summary
 }
 
-test('the run defaults to three batches at a time', async () => {
+test('the run defaults to six batches at a time', async () => {
   const model = countingModel()
   const { tools } = makeCtx(model.stream)
   const tool = tools[0]
   await tool.execute({ action: 'sample' }, {})
   const summary = await runToCompletion(tool, { batch_size: 5 })
-  assert.equal(summary.job.concurrency, 3)
-  assert.equal(summary.options.concurrency, 3)
+  assert.equal(summary.job.concurrency, 6)
+  assert.equal(summary.options.concurrency, 6)
   assert.equal(summary.job.running, false)
 })
 

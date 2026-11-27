@@ -584,7 +584,7 @@ window.__ModuleLoader__.load({
       const [messages, setMessages] = React.useState([])
       const [question, setQuestion] = React.useState('')
       const [batchSize, setBatchSize] = React.useState(15)
-      const [concurrency, setConcurrency] = React.useState(3)
+      const [concurrency, setConcurrency] = React.useState(6)
       const [expanded, setExpanded] = React.useState({})
       const [page, setPage] = React.useState(1)
       const [pageSize, setPageSize] = React.useState(50)
